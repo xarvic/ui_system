@@ -255,14 +255,10 @@ impl Renderer{
         let mut buffer = CommandBuffer::new();
         component.build(Builder::create_with(&mut buffer));
 
-        println!("Build Frame({})", (buffer.color_rects.len() + buffer.glyphs.len()) / 6);
-
         self.render(&mut buffer, &mut frame);
         frame.finish().unwrap();
     }
     pub fn render_buffer(&mut self, buffer: &mut CommandBuffer, mut frame: Frame){
-        println!("Build Buffer with {} elements", (buffer.color_rects.len() + buffer.glyphs.len()) / 6);
-
         self.render(buffer, &mut frame);
         frame.finish().unwrap();
     }

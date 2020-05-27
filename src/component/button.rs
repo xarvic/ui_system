@@ -3,6 +3,7 @@ use crate::renderer::Builder;
 use core::position::Vector;
 use core::color::Color;
 use crate::component::event::{Event, MouseEvent, MouseButton};
+use std::ops::DerefMut;
 
 pub struct Button {
     inner: Option<Box<dyn Component>>,
@@ -12,7 +13,7 @@ pub struct Button {
 }
 
 impl Button{
-    fn new() -> Button{
+    pub fn new() -> Button{
         Button{
             inner: None,
             on_click: None,
@@ -21,7 +22,7 @@ impl Button{
         }
     }
     #[inline]
-    fn onclick(mut self, handler: impl FnMut() + 'static) -> Self {
+    pub fn onclick(mut self, handler: impl FnMut() + 'static) -> Self {
         self.on_click = Some(Box::new(handler));
         self
     }
@@ -58,8 +59,18 @@ impl Component for Button {
                         self.changed = true;
                     }
                 },
-                MouseEvent::Relased(MouseButton::Left) | MouseEvent::Exit => {
+                MouseEvent::Exit => {
                     if self.pressed {
+                        self.pressed = false;
+                        self.changed = true;
+                    }
+                },
+                MouseEvent::Relased(MouseButton::Left) => {
+                    if self.pressed {
+                        //run handler
+                        if let Some(ref mut handler) = self.on_click {
+                            handler.deref_mut()();
+                        }
                         self.pressed = false;
                         self.changed = true;
                     }
