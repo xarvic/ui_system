@@ -4,5 +4,7 @@ pub mod renderer;
 pub mod component;
 pub mod process;
 
+pub use process::window;
+
 #[macro_use]
 extern crate glium;

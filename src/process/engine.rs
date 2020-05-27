@@ -28,14 +28,14 @@ impl Engine{
         let cb = ContextBuilder::new();
 
         let context = if let Some(constructor) = constructor {
-            let wb = wb.with_title(constructor.titel);
+            let wb = wb.with_title(constructor.titel.clone().unwrap_or("*Rust UI Window*".to_string()));
 
             let display = Display::new(wb, cb, &event_loop)
                 .map_err(|err|err.to_string())?;
 
             let context = display.get_context().clone();
 
-            let win = ManagedWindow::new(display, constructor.main_component);
+            let win = ManagedWindow::new(display, constructor);
 
             windows.insert(win.1, win.0);
 
@@ -52,8 +52,14 @@ impl Engine{
 
     }
     pub fn handleWindowEvent(&mut self, event: WindowEvent, id: WindowId){
+        let mut remove = false;
         if let Some(window) = self.windows.get_mut(&id) {
             window.handle_event(event);
+            remove = window.closed();
+        }
+        if remove {
+            println!("closed window!");
+            self.windows.remove(&id);
         }
     }
     ///
@@ -67,7 +73,13 @@ impl Engine{
     /// and draws the window if needed
     ///
     /// force_redraw draws the window even if nothing changed
-    pub fn update(&mut self, _id: WindowId, _force_redraw: bool){
+    pub fn update(&mut self, id: WindowId, force_redraw: bool){
+        if let Some(window) = self.windows.get_mut(&id) {
+            window.update(force_redraw, &mut self.renderer);
+        }
+    }
 
+    pub fn empty(&self) -> bool {
+        self.windows.len() == 0
     }
 }

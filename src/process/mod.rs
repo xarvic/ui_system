@@ -2,6 +2,7 @@ use crate::process::engine::Engine;
 use crate::component::component::Component;
 use glutin::event::Event;
 use glutin::event_loop::{EventLoop, EventLoopProxy, ControlFlow};
+use glutin::ContextError::ContextLost;
 
 mod engine;
 mod command;
@@ -9,17 +10,30 @@ mod window;
 
 pub struct WindowConstructor{
     main_component: Box<dyn Component>,
-    titel: String,
-
+    titel: Option<String>,
+    close_handler: Option<Box<dyn FnMut() -> bool>>
 }
 
 impl WindowConstructor{
-    pub fn new(titel: &str, main_component: impl Component + 'static) -> WindowConstructor{
+    pub fn new(main_component: Box<dyn Component + 'static>) -> WindowConstructor{
         WindowConstructor{
-            titel: titel.to_string(),
-            main_component: Box::new(main_component),
+            titel: None,
+            main_component,
+            close_handler: None,
         }
     }
+    pub fn title(mut self, title: &str) -> Self{
+        self.titel = Some(title.to_string());
+        self
+    }
+    pub fn on_close(mut self, handler: impl FnMut() -> bool + 'static) -> Self{
+        self.close_handler = Some(Box::new(handler));
+        self
+    }
+}
+
+pub fn window(main_component: impl Component + 'static) -> WindowConstructor {
+    WindowConstructor::new(Box::new(main_component))
 }
 
 pub enum EngineCommand {
@@ -58,6 +72,9 @@ fn run(first_window: Option<WindowConstructor>) {
                 *control = ControlFlow::Poll;
             },
             _ => {},
+        }
+        if engine.empty() {
+            *control = ControlFlow::Exit;
         }
     });
 }
