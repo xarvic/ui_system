@@ -44,6 +44,7 @@ impl Component for Button {
         };
 
         buffer.draw_round_rect(Vector::null(), self.size(), color, [10.0, 10.0, 10.0, 10.0]);
+        buffer.draw_simple_border(Vector::null(), self.size(), Color::new(0.0, 0.5, 1.0, 1.0), 3.0, 10.0);
         self.changed = false;
     }
 

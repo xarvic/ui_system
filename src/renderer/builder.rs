@@ -14,19 +14,19 @@ impl<'a> Builder<'a>{
         Builder{position: Vector{x: 0.0, y: 0.0}, buffer_written: false, buffer}
     }
     #[inline]
-    pub fn draw_color_triangle(&mut self, start: Vector, v_end: Vector, color: Color){
+    fn draw_color_triangle(&mut self, start: Vector, v_end: Vector, color: Color){
         self.buffer.color_rects.push(ColorVertex::from(self.position + start, Vector::new(-1.0, -1.0), color, 0.0));
         self.buffer.color_rects.push(ColorVertex::from(self.position + Vector::new(start.x, v_end.y), Vector::new(-1.0, -1.0), color, 0.0));
         self.buffer.color_rects.push(ColorVertex::from(self.position + Vector::new(v_end.x, start.y), Vector::new(-1.0, -1.0), color, 0.0));
     }
     #[inline]
-    pub fn draw_round_color_triangle(&mut self, start: Vector, v_end: Vector, color: Color, mut round: f32){
+    fn draw_round_color_triangle(&mut self, start: Vector, v_end: Vector, color: Color, mut round: f32){
         round = round.min((start.x-v_end.x).abs().min((start.y-v_end.y).abs()));
         self.buffer.color_rects.push(ColorVertex::from(self.position + start, Vector::new(0.0, 0.0), color, round));
         self.buffer.color_rects.push(ColorVertex::from(self.position + Vector::new(start.x, v_end.y), Vector::new(0.0, -((start.y-v_end.y).abs())), color, round));
         self.buffer.color_rects.push(ColorVertex::from(self.position + Vector::new(v_end.x, start.y), Vector::new(-((start.x-v_end.x).abs()), 0.0), color, round));
     }
-    pub fn draw_color_rect(&mut self, start: Vector, end: Vector, color: Color){
+    fn draw_color_rect(&mut self, start: Vector, end: Vector, color: Color){
         self.draw_round_color_triangle(start, end, color, 5.0);
         self.draw_round_color_triangle(end, start, color, 5.0);
     }
@@ -61,6 +61,32 @@ impl<'a> Builder<'a>{
     }
 
     //Lines
+    #[inline(always)]
+    pub fn draw_corner(&mut self, position: Vector, orientation: Vector, color: Color, width: f32, rounded: f32){
+        //Clockwise
+        if orientation.x == orientation.y {
+            //Left Top or right bottom => y -> x
+            self.to_point(position.y(rounded * orientation.y), color, width, false);
+            self.arc_to(position.x(rounded * orientation.x), color, width, position, rounded);
+        } else {
+            //Left bottom or right top => x -> y
+            self.to_point(position.x(rounded * orientation.x), color, width, false);
+            self.arc_to(position.y(rounded * orientation.y), color, width, position, rounded);
+        }
+    }
+
+    pub fn draw_simple_border(&mut self, position: Vector, size: Vector, color: Color, width: f32, rounded: f32){
+        self.to_point(Vector::new(rounded, 0.0), color, width, true);
+        //Right Top
+        self.draw_corner(position.x(size.x), Vector::new(-1.0, 1.0), color, width, rounded);
+        //Right Bottom
+        self.draw_corner(position + size, Vector::new(-1.0, -1.0), color, width, rounded);
+        //Left Bottom
+        self.draw_corner(position.y(size.y), Vector::new(1.0, -1.0), color, width, rounded);
+        //Left Top
+        self.draw_corner(position, Vector::new(1.0, 1.0), color, width, rounded);
+
+    }
 
     pub fn to_point(&mut self, position: Vector, color: Color, width: f32, restart: bool) {
         let mut option = 0;
