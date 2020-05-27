@@ -10,8 +10,6 @@ use std::io::{BufReader, BufRead};
 use std::mem::replace;
 use std::fmt::{Formatter, Debug};
 use glium::index::PrimitiveType;
-use core::position::Vector;
-use glium::buffer::Buffer;
 use crate::component::component::Component;
 
 pub fn make_shader(path: &str, facade: &dyn Facade) -> Program{

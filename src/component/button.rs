@@ -1,11 +1,14 @@
-use crate::component::component::Component;
-use crate::renderer::{CommandBuffer, Builder};
+use crate::component::component::{Component, IntoComponent};
+use crate::renderer::Builder;
 use core::position::Vector;
 use core::color::Color;
+use crate::component::event::{Event, MouseEvent, MouseButton};
 
 pub struct Button {
     inner: Option<Box<dyn Component>>,
-    on_click: Option<Box<FnMut()>>
+    on_click: Option<Box<dyn FnMut()>>,
+    pressed: bool,
+    changed: bool,
 }
 
 impl Button{
@@ -13,6 +16,8 @@ impl Button{
         Button{
             inner: None,
             on_click: None,
+            pressed: false,
+            changed: false,
         }
     }
     #[inline]
@@ -32,10 +37,43 @@ impl Component for Button {
     }
 
     fn build(&mut self, mut buffer: Builder) {
-        buffer.draw_round_rect(Vector::null(), self.size(), Color::new(0.5, 0.5, 1.0, 1.0), [10.0, 10.0, 10.0, 10.0]);
+        let color = if self.pressed {
+            Color::new(0.0, 0.0, 1.0, 1.0)
+        } else {
+            Color::new(0.5, 0.5, 1.0, 1.0)
+        };
+
+        buffer.draw_round_rect(Vector::null(), self.size(), color, [10.0, 10.0, 10.0, 10.0]);
+        self.changed = false;
+    }
+
+    fn handle_event(&mut self, event: Event) -> bool {
+
+        if let Event::Mouse(_, mouse_event) = event {
+            match mouse_event {
+                MouseEvent::Pressed(MouseButton::Left) => {
+                    if !self.pressed {
+                        self.pressed = true;
+                        self.changed = true;
+                    }
+                },
+                MouseEvent::Relased(MouseButton::Left) | MouseEvent::Exit => {
+                    if self.pressed {
+                        self.pressed = false;
+                        self.changed = true;
+                    }
+                },
+                _ => {}
+            }
+        }
+        self.changed
+    }
+
+    fn changed(&self) -> bool {
+        self.changed
     }
 }
 
-pub fn button() -> Button{
+pub fn button(inner: impl IntoComponent) -> Button{
     Button::new()
 }
