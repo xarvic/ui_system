@@ -7,4 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-glium = "0.27.0"K
+core = { path = "../core" }
+glium = "0.27.0"
+glutin = "0.24.0"
+image = "0.23.4"

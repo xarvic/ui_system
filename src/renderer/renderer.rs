@@ -4,14 +4,15 @@ use std::fs::{read_to_string, File};
 use std::rc::Rc;
 use crate::renderer::{load_texture, CommandBuffer, Builder};
 use image::ImageFormat;
-use crate::component::Component;
 use glium::texture::{texture2d::Texture2d};
-use crate::basics::Vector;
 use std::path::Path;
 use std::io::{BufReader, BufRead};
 use std::mem::replace;
 use std::fmt::{Formatter, Debug};
 use glium::index::PrimitiveType;
+use core::position::Vector;
+use glium::buffer::Buffer;
+use crate::component::component::Component;
 
 pub fn make_shader(path: &str, facade: &dyn Facade) -> Program{
     let vertex_shader = read_to_string(String::from(path) + ".vs").expect(&format!("cant read {}.vs", path));
@@ -186,11 +187,12 @@ pub struct Renderer{
 }
 
 impl Renderer{
-    pub fn new(context: &Rc<Context>) -> Renderer{
-        Renderer::from(make_shader("src/shaders/rounded", context),
-                       make_shader("src/shaders/glyph", context),
-                       make_shader_single_file("src/shaders/border.glsl", context).unwrap(),
-                       load_texture("data/font.png", ImageFormat::PNG, context),
+    pub fn new(context: &impl Facade) -> Renderer{
+        let context = context.get_context();
+        Renderer::from(make_shader("shaders/rounded", context),
+                       make_shader("shaders/glyph", context),
+                       make_shader_single_file("shaders/border.glsl", context).unwrap(),
+                       load_texture("data/font.jpeg", ImageFormat::from_path("data/font.jpeg").unwrap_or(ImageFormat::Png), context),
                        context
         )
     }
@@ -253,20 +255,17 @@ impl Renderer{
     }
     pub fn render_screen(&mut self, component: &mut dyn Component, mut frame: Frame){
         let mut buffer = CommandBuffer::new();
-        component.build(Builder::create_with(&mut buffer), Vector::from(frame.get_dimensions()));
+        component.build(Builder::create_with(&mut buffer));
 
         println!("Build Frame({})", (buffer.color_rects.len() + buffer.glyphs.len()) / 6);
 
         self.render(&mut buffer, &mut frame);
         frame.finish().unwrap();
     }
-    pub fn render_change(&mut self, component: &mut dyn Component, mut frame: Frame){
-        let mut buffer = CommandBuffer::new();
-        component.appy_change(Builder::create_with(&mut buffer), Vector::from(frame.get_dimensions()));
+    pub fn render_buffer(&mut self, buffer: &mut CommandBuffer, mut frame: Frame){
+        println!("Build Buffer with {} elements", (buffer.color_rects.len() + buffer.glyphs.len()) / 6);
 
-        println!("Build Change({})", (buffer.color_rects.len() + buffer.glyphs.len()) / 6);
-
-        self.render(&mut buffer, &mut frame);
+        self.render(buffer, &mut frame);
         frame.finish().unwrap();
     }
 }

@@ -1,7 +1,5 @@
 use std::vec::Vec;
 
-use crate::basics::*;
-
 mod builder;
 pub use builder::Builder;
 mod renderer;
@@ -13,6 +11,8 @@ use std::rc::Rc;
 use glium::backend::Context;
 use std::fs::read;
 use glium::texture::{texture2d::Texture2d};
+use core::position::Vector;
+use core::color::Color;
 
 
 pub fn load_texture(path: &str, format: ImageFormat, context: &Rc<Context>) -> Texture2d{
@@ -52,7 +52,7 @@ pub struct ColorVertex{
 }
 impl ColorVertex{
     pub fn from(position: Vector, round_index: Vector, color: Color, pixels: f32) -> ColorVertex{
-        ColorVertex{position: [position.x, position.y], round_index: [round_index.x, round_index.y], color: [color.r, color.g, color.b, color.a], pixels}
+        ColorVertex{position: position.into(), round_index: round_index.into(), color: color.into(), pixels}
     }
 }
 
