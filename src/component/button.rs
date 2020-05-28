@@ -52,8 +52,8 @@ impl Component for Button {
             Color::new(0.5, 0.5, 1.0, 1.0)
         };
 
-        buffer.draw_round_rect(Vector::null(), self.get_size(), color, [10.0, 10.0, 10.0, 10.0]);
-        buffer.draw_simple_border(Vector::null(), self.get_size(), Color::new(0.0, 0.5, 1.0, 1.0), 1.0, 10.0);
+        buffer.round_rect(Vector::null(), self.get_size(), color, [10.0, 10.0, 10.0, 10.0]);
+        buffer.simple_border(Vector::null(), self.get_size(), Color::new(0.0, 0.5, 1.0, 1.0), 1.0, 10.0);
 
         if let Some(ref mut inner) = self.inner {
             inner.deref_mut().build(buffer.child_builder(Vector::new(6.0, 6.0)));

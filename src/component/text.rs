@@ -9,13 +9,12 @@ use glutin::event::{VirtualKeyCode, ElementState};
 pub struct Text{
     text: String,
     size: f32,
-    display_length: Option<f32>,
     color: Color,
 }
 
 impl Text {
     pub fn new(text: String) -> Text {
-        Text{text, size: 20.0, display_length: None, color: BLACK}
+        Text{text, size: 20.0, color: BLACK}
     }
     pub fn size(mut self, size: f32) -> Self {
         self.size = size;
@@ -40,7 +39,7 @@ impl Component for Text {
         Vector::new(self.text.len() as f32 * self.width(), self.size)
     }
 
-    fn build(&mut self, mut builder: Builder) {
+    fn build(&mut self, builder: Builder) {
         draw_string(builder, &self.text, self.color, Vector::null(), self.size);
     }
 
@@ -72,22 +71,22 @@ impl TextField {
 
 impl Component for TextField {
     fn get_size(&self) -> Vector {
-        self.inner.get_size().xy(self.inner.width() + 6.0, 6.0)
+        self.inner.get_size().xy(6.0, 6.0)
     }
 
     fn get_pref_size(&self) -> Vector {
-        self.inner.get_pref_size().xy(self.inner.width() + 6.0, 6.0)
+        self.inner.get_pref_size().xy(6.0, 6.0)
     }
 
     fn build(&mut self, mut builder: Builder) {
-        builder.draw_round_rect(Vector::null(),
-                                self.get_size(),
-                                Color::new(0.0, 0.0, 0.0, 0.2),
-                                [3.0, 3.0, 3.0, 3.0]);
-        builder.draw_rect(Vector::new(self.cursor as f32 * self.inner.width() as f32, 3.0),
-                          Vector::new(self.cursor as f32 * self.inner.width() as f32 + 1.0, self.inner.size + 3.0),
-                          self.inner.color);
-        self.inner.build(builder);
+        builder.round_rect(Vector::null(),
+                           self.get_size(),
+                           Color::new(0.0, 0.0, 0.0, 0.2),
+                           [3.0, 3.0, 3.0, 3.0]);
+        builder.rect(Vector::new(self.cursor as f32 * self.inner.width() as f32 + 3.0, 3.0),
+                     Vector::new(self.cursor as f32 * self.inner.width() as f32 + 4.0, self.inner.size + 3.0),
+                     self.inner.color);
+        self.inner.build(builder.child_builder(Vector::new(3.0, 3.0)));
         self.edited = false;
     }
 
@@ -174,7 +173,7 @@ fn draw_string(mut builder: Builder, text: &str, color: Color, pos: Vector, size
             64
         };
 
-        builder.draw_glyph(pos.x(x), pos.xy(x + width, size), index, color);
+        builder.glyph(pos.x(x), pos.xy(x + width, size), index, color);
         x += width;
     }
 }

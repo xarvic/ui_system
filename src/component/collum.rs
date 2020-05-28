@@ -8,7 +8,6 @@ pub struct Collum{
     focused: Option<usize>,
     spacing: f32,
     border: f32,
-    width: Option<f32>,
     size: Vector,
     changed: bool,
 }
@@ -24,13 +23,12 @@ impl Collum {
             childs: Vec::new(),
             spacing: 10.0,
             border:10.0,
-            width: None,
             size: Vector::new(20.0, 20.0),
             changed: false,
         }
     }
     pub fn child(mut self, child: impl Component + 'static) -> Self{
-        self.size = Vector::new(self.size.x.max(child.get_size().x), self.size.y + 10.0 + child.get_size().y);
+        self.size = Vector::new(self.size.x.max(child.get_size().x), self.size.y + self.spacing + child.get_size().y);
         self.childs.push(Box::new(child));
         self
     }
@@ -46,10 +44,10 @@ impl Component for Collum {
     }
 
     fn build(&mut self, mut builder: Builder) {
-        let mut translate_y = 10.0;
+        let mut translate_y = self.border;
         for child in self.childs.iter_mut() {
             child.build(builder.child_builder(Vector::new(10.0, translate_y)));
-            translate_y += 10.0 + child.get_size().y;
+            translate_y += self.spacing + child.get_size().y;
         }
         self.changed = false;
     }
@@ -57,12 +55,12 @@ impl Component for Collum {
     fn handle_event(&mut self, event: Event) -> bool {
         match event {
             Event::Mouse(pos, event) => {
-                if pos.x >= 10.0 && pos.x <= self.size.x - 10.0 {
-                    let mut translate_y = 10.0;
+                if pos.x >= self.border && pos.x <= self.size.x - self.border {
+                    let mut translate_y = self.border;
 
                     for (index, child) in self.childs.iter_mut().enumerate() {
                         if pos.y > translate_y && pos.y < translate_y + child.get_size().y {
-                            let child_change = child.handle_event(Event::Mouse(pos.xy(-10.0, -translate_y), event));
+                            let child_change = child.handle_event(Event::Mouse(pos.xy(-self.border, -translate_y), event));
                             self.changed = self.changed || child_change;
                             if let MouseEvent::Relased(_) | MouseEvent::Pressed(_) = event {
                                 self.focused = Some(index);
@@ -71,7 +69,7 @@ impl Component for Collum {
                             return self.changed;
                         }
 
-                        translate_y += 10.0 + child.get_size().y;
+                        translate_y += self.spacing + child.get_size().y;
                     }
                 }
                 if let MouseEvent::Relased(_) | MouseEvent::Pressed(_) = event {

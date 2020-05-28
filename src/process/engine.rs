@@ -12,12 +12,12 @@ use std::collections::HashMap;
 use glutin::window::WindowId;
 use crate::process::window::ManagedWindow;
 use glium::backend::Facade;
-use std::time::Instant;
+
+
 
 pub struct Engine{
     renderer: Renderer,
     windows: HashMap<WindowId, ManagedWindow>,
-    last_sync: Instant,
 }
 
 impl Engine{
@@ -46,7 +46,7 @@ impl Engine{
             //    .map_err(|err|"could not create headless opengl context! ")?
         };
 
-        Ok(Engine{windows, renderer: Renderer::new(&context), last_sync: Instant::now()})
+        Ok(Engine{windows, renderer: Renderer::new(&context)})
     }
     pub fn handle_engine_command(&mut self, _command: EngineCommand){
 

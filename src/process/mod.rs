@@ -1,7 +1,7 @@
 use crate::process::engine::Engine;
 use crate::component::component::Component;
 use glutin::event::Event;
-use glutin::event_loop::{EventLoop, EventLoopProxy, ControlFlow};
+use glutin::event_loop::{EventLoop, ControlFlow};
 
 mod engine;
 mod command;
@@ -29,6 +29,9 @@ impl WindowConstructor{
         self.close_handler = Some(Box::new(handler));
         self
     }
+    pub fn open(self) {
+        new_window(self);
+    }
 }
 
 pub fn window(main_component: impl Component + 'static) -> WindowConstructor {
@@ -39,8 +42,6 @@ pub enum EngineCommand {
     NewWindow(WindowConstructor),
     StateUpdate,
 }
-
-static mut EVENT_PROXY: Option<EventLoopProxy<EngineCommand>> = None;
 
 fn run(first_window: Option<WindowConstructor>) {
     let event_loop = EventLoop::with_user_event();
