@@ -72,7 +72,39 @@ pub fn make_shader_single_file(path: &str, facade: &dyn Facade) -> Result<Progra
     let mut geometry_shader: Option<String> = None;
     let mut fragment_shader: Option<String> = None;
 
+
+    let mut set_shaders = |
+        s_type: ShaderType,
+        current_source: String
+    | {
+        match s_type {
+            ShaderType::Vertex => {
+                if let Some(_) = vertex_shader {
+                    return Err(ShaderError::MultipleSourceError(format!("Multiple Vertex Sources for Shader {}", path)));
+                } else {
+                    vertex_shader = Some(current_source);
+                }
+            }
+            ShaderType::Geometry => {
+                if let Some(_) = geometry_shader {
+                    return Err(ShaderError::MultipleSourceError(format!("Multiple Geometry Sources for Shader {}", path)));
+                } else {
+                    geometry_shader = Some(current_source);
+                }
+            }
+            ShaderType::Framgent => {
+                if let Some(_) = fragment_shader {
+                    return Err(ShaderError::MultipleSourceError(format!("Multiple Fragment Sources for Shader {}", path)));
+                } else {
+                    fragment_shader = Some(current_source);
+                }
+            }
+        }
+        Ok(())
+    };
+
     let mut current_type: Option<ShaderType> = None;
+
     let mut current_source = String::new();
 
     for (_line_number, line) in reader.lines().enumerate() {
@@ -80,29 +112,7 @@ pub fn make_shader_single_file(path: &str, facade: &dyn Facade) -> Result<Progra
         let line = line.trim();
         if line.eq("#vertex") || line.eq("#fragment") || line.eq("#geometry") {
             if let Some(type_) = current_type {
-                match type_ {
-                    ShaderType::Vertex => {
-                        if let Some(_) = vertex_shader {
-                            return Err(ShaderError::MultipleSourceError(format!("Multiple Vertex Sources for Shader {}", path)));
-                        } else {
-                            vertex_shader = Some(replace(&mut current_source, String::new()));
-                        }
-                    }
-                    ShaderType::Geometry => {
-                        if let Some(_) = geometry_shader {
-                            return Err(ShaderError::MultipleSourceError(format!("Multiple Geometry Sources for Shader {}", path)));
-                        } else {
-                            geometry_shader = Some(replace(&mut current_source, String::new()));
-                        }
-                    }
-                    ShaderType::Framgent => {
-                        if let Some(_) = fragment_shader {
-                            return Err(ShaderError::MultipleSourceError(format!("Multiple Fragment Sources for Shader {}", path)));
-                        } else {
-                            fragment_shader = Some(replace(&mut current_source, String::new()));
-                        }
-                    }
-                }
+                set_shaders(type_, replace(&mut current_source, String::new()))?;
             } else {
                 current_source = String::new();
             }
@@ -128,30 +138,7 @@ pub fn make_shader_single_file(path: &str, facade: &dyn Facade) -> Result<Progra
     }
 
     if let Some(type_) = current_type {
-        print!("set old:\n");
-        match type_{
-            ShaderType::Vertex => {
-                if let Some(_) = vertex_shader {
-                    return Err(ShaderError::MultipleSourceError(format!("Multiple Vertex Sources for Shader {}", path)));
-                } else {
-                    vertex_shader = Some(replace(&mut current_source, String::new()));
-                }
-            }
-            ShaderType::Geometry => {
-                if let Some(_) = geometry_shader {
-                    return Err(ShaderError::MultipleSourceError(format!("Multiple Geometry Sources for Shader {}", path)));
-                } else {
-                    geometry_shader = Some(replace(&mut current_source, String::new()));
-                }
-            }
-            ShaderType::Framgent => {
-                if let Some(_) = fragment_shader {
-                    return Err(ShaderError::MultipleSourceError(format!("Multiple Fragment Sources for Shader {}", path)));
-                } else {
-                    fragment_shader = Some(replace(&mut current_source, String::new()));
-                }
-            }
-        }
+        set_shaders(type_, current_source)?;
     }
 
     let geometry_shader = match geometry_shader {
@@ -187,10 +174,10 @@ pub struct Renderer{
 impl Renderer{
     pub fn new(context: &impl Facade) -> Renderer{
         let context = context.get_context();
-        Renderer::from(make_shader("shaders/rounded", context),
-                       make_shader("shaders/glyph", context),
+        Renderer::from(make_shader_single_file("shaders/rounded.glsl", context).unwrap(),
+                       make_shader_single_file("shaders/glyph.glsl", context).unwrap(),
                        make_shader_single_file("shaders/border.glsl", context).unwrap(),
-                       load_texture("data/font.jpeg", ImageFormat::from_path("data/font.jpeg").unwrap_or(ImageFormat::Png), context),
+                       load_texture("data/font2.png", ImageFormat::Png, context),
                        context
         )
     }

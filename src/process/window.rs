@@ -5,7 +5,7 @@ use core::position::Vector;
 use glutin::event::WindowEvent;
 use crate::renderer::Renderer;
 use crate::component::event::{Event, MouseEvent};
-use std::ops::{DerefMut, Deref};
+use std::ops::DerefMut;
 use crate::process::WindowConstructor;
 
 

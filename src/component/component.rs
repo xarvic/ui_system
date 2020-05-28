@@ -34,16 +34,16 @@ impl<T: Component> Component for Box<T> {
 }
 
 pub trait IntoComponent {
-    type Component: Component;
+    type Component: Component + 'static;
 
-    fn into(self) -> Self::Component;
+    fn into_component(self) -> Self::Component;
 }
 
-impl<T> IntoComponent for T
+impl<T: 'static> IntoComponent for T
 where T: Component{
     type Component = Self;
 
-    fn into(self) -> Self::Component {
+    fn into_component(self) -> Self::Component {
         self
     }
 }

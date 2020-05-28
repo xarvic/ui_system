@@ -48,10 +48,10 @@ impl Engine{
 
         Ok(Engine{windows, renderer: Renderer::new(&context), last_sync: Instant::now()})
     }
-    pub fn handleEngineCommand(&mut self, _command: EngineCommand){
+    pub fn handle_engine_command(&mut self, _command: EngineCommand){
 
     }
-    pub fn handleWindowEvent(&mut self, event: WindowEvent, id: WindowId){
+    pub fn handle_window_event(&mut self, event: WindowEvent, id: WindowId){
         let mut remove = false;
         if let Some(window) = self.windows.get_mut(&id) {
             window.handle_event(event);

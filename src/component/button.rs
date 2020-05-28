@@ -13,9 +13,9 @@ pub struct Button {
 }
 
 impl Button{
-    pub fn new() -> Button{
+    pub fn new(inner: Box<dyn Component>) -> Button{
         Button{
-            inner: None,
+            inner: Some(inner),
             on_click: None,
             pressed: false,
             changed: false,
@@ -30,11 +30,19 @@ impl Button{
 
 impl Component for Button {
     fn size(&self) -> Vector{
-        Vector::new(100.0, 40.0)
+        if let Some(ref inner) = self.inner {
+            inner.size().xy(12.0, 12.0)
+        } else {
+            Vector::new(40.0, 40.0)
+        }
     }
 
     fn pref_size(&self) -> Vector{
-        self.size()
+        if let Some(ref inner) = self.inner {
+            inner.pref_size().xy(12.0, 12.0)
+        } else {
+            Vector::new(40.0, 40.0)
+        }
     }
 
     fn build(&mut self, mut buffer: Builder) {
@@ -45,7 +53,11 @@ impl Component for Button {
         };
 
         buffer.draw_round_rect(Vector::null(), self.size(), color, [10.0, 10.0, 10.0, 10.0]);
-        buffer.draw_simple_border(Vector::null(), self.size(), Color::new(0.0, 0.5, 1.0, 1.0), 3.0, 10.0);
+        buffer.draw_simple_border(Vector::null(), self.size(), Color::new(0.0, 0.5, 1.0, 1.0), 1.0, 10.0);
+
+        if let Some(ref mut inner) = self.inner {
+            inner.deref_mut().build(buffer.child_builder(Vector::new(6.0, 6.0)));
+        }
         self.changed = false;
     }
 
@@ -87,5 +99,5 @@ impl Component for Button {
 }
 
 pub fn button(inner: impl IntoComponent) -> Button{
-    Button::new()
+    Button::new(Box::new(inner.into_component()))
 }

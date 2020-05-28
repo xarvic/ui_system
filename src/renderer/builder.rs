@@ -52,12 +52,12 @@ impl<'a> Builder<'a>{
     pub fn draw_glyph(&mut self, start: Vector, end: Vector, glyph: u32){
         let x = glyph as f32 % 13.0;
         let y = (glyph / 13) as f32;
-        self.buffer.glyphs.push(GlyphVertex::from(self.position + start, Vector{x: x / 13.0, y: 1.0 - y / 12.0}));
-        self.buffer.glyphs.push(GlyphVertex::from(self.position + Vector{x: start.x, y: end.y}, Vector{x: x / 13.0, y: 1.0 - (y + 1.0) / 12.0}));
-        self.buffer.glyphs.push(GlyphVertex::from(self.position + Vector{x: end.x, y: start.y}, Vector{x: (x + 1.0) / 13.0, y: 1.0 - y / 12.0}));
-        self.buffer.glyphs.push(GlyphVertex::from(self.position + Vector{x: start.x, y: end.y}, Vector{x: x / 13.0, y: 1.0 - (y + 1.0) / 12.0}));
-        self.buffer.glyphs.push(GlyphVertex::from(self.position + Vector{x: end.x, y: start.y}, Vector{x: (x + 1.0) / 13.0, y: 1.0 - y / 12.0}));
-        self.buffer.glyphs.push(GlyphVertex::from(self.position + end, Vector{x: (x + 1.0) / 13.0, y: 1.0 - (y + 1.0) / 12.0}));
+        self.buffer.glyphs.push(GlyphVertex::from(self.position + start, Vector{x: x / 13.0, y: 1.0 - y / 7.0}));
+        self.buffer.glyphs.push(GlyphVertex::from(self.position + Vector{x: start.x, y: end.y}, Vector{x: x / 13.0, y: 1.0 - (y + 1.0) / 7.0}));
+        self.buffer.glyphs.push(GlyphVertex::from(self.position + Vector{x: end.x, y: start.y}, Vector{x: (x + 1.0) / 13.0, y: 1.0 - y / 7.0}));
+        self.buffer.glyphs.push(GlyphVertex::from(self.position + Vector{x: start.x, y: end.y}, Vector{x: x / 13.0, y: 1.0 - (y + 1.0) / 7.0}));
+        self.buffer.glyphs.push(GlyphVertex::from(self.position + Vector{x: end.x, y: start.y}, Vector{x: (x + 1.0) / 13.0, y: 1.0 - y / 7.0}));
+        self.buffer.glyphs.push(GlyphVertex::from(self.position + end, Vector{x: (x + 1.0) / 13.0, y: 1.0 - (y + 1.0) / 7.0}));
     }
 
     //Lines

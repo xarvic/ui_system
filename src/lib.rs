@@ -3,6 +3,7 @@
 pub mod renderer;
 pub mod component;
 pub mod process;
+pub mod state;
 
 pub use process::window;
 

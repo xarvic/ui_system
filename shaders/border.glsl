@@ -29,7 +29,7 @@ void main() {
 #version 330
 
 #define M_PI 3.1415926535897932384626433832795
-#define OFFSET 0.65
+#define OFFSET 0.5
 
 uniform vec2 display;
 

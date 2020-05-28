@@ -2,7 +2,6 @@ use crate::process::engine::Engine;
 use crate::component::component::Component;
 use glutin::event::Event;
 use glutin::event_loop::{EventLoop, EventLoopProxy, ControlFlow};
-use glutin::ContextError::ContextLost;
 
 mod engine;
 mod command;
@@ -41,7 +40,7 @@ pub enum EngineCommand {
     StateUpdate,
 }
 
-static mut event_proxy: Option<EventLoopProxy<EngineCommand>> = None;
+static mut EVENT_PROXY: Option<EventLoopProxy<EngineCommand>> = None;
 
 fn run(first_window: Option<WindowConstructor>) {
     let event_loop = EventLoop::with_user_event();
@@ -50,11 +49,11 @@ fn run(first_window: Option<WindowConstructor>) {
         .expect("Could not create the Engine!");
 
     event_loop.run(move|event, _evl, control|{
-        //When we get an event we poll all remaining
-
         match event {
             Event::WindowEvent { window_id, event } => {
-                engine.handleWindowEvent(event, window_id);
+                engine.handle_window_event(event, window_id);
+
+                //When we get an event we poll all remaining
                 *control = ControlFlow::Poll;
             },
             Event::NewEvents(_cause) => {
@@ -64,16 +63,21 @@ fn run(first_window: Option<WindowConstructor>) {
                 engine.update_needed();
             }
             Event::UserEvent(command) => {
-                engine.handleEngineCommand(command);
+                engine.handle_engine_command(command);
+
+                //When we get an event we poll all remaining
                 *control = ControlFlow::Poll;
             }
             Event::RedrawRequested(id) => {
                 engine.update(id, true);
+
+                //When we get an event we poll all remaining
                 *control = ControlFlow::Poll;
             },
             _ => {},
         }
         if engine.empty() {
+            //TODO: dont close app
             *control = ControlFlow::Exit;
         }
     });
