@@ -4,20 +4,20 @@ use std::ops::{Deref, DerefMut};
 use crate::component::event::Event;
 
 pub trait Component{
-    fn size(&self) -> Vector;
-    fn pref_size(&self) -> Vector;
+    fn get_size(&self) -> Vector;
+    fn get_pref_size(&self) -> Vector;
     fn build(&mut self, builder: Builder);
     fn handle_event(&mut self, event: Event) -> bool;
-    fn changed(&self) -> bool;
+    fn has_changed(&self) -> bool;
 }
 
 impl<T: Component> Component for Box<T> {
-    fn size(&self) -> Vector {
-        self.deref().size()
+    fn get_size(&self) -> Vector {
+        self.deref().get_size()
     }
 
-    fn pref_size(&self) -> Vector {
-        self.deref().pref_size()
+    fn get_pref_size(&self) -> Vector {
+        self.deref().get_pref_size()
     }
 
     fn build(&mut self, buffer: Builder) {
@@ -28,8 +28,8 @@ impl<T: Component> Component for Box<T> {
         self.deref_mut().handle_event(event)
     }
 
-    fn changed(&self) -> bool {
-        self.deref().changed()
+    fn has_changed(&self) -> bool {
+        self.deref().has_changed()
     }
 }
 

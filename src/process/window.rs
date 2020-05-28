@@ -67,6 +67,13 @@ impl ManagedWindow {
                     self.main_component.handle_event(Event::Mouse(self.last_mouse_position, MouseEvent::Relased(button)));
                 }
             }
+            WindowEvent::ReceivedCharacter(charac) => {
+                self.main_component.handle_event(Event::Char(charac));
+            }
+            WindowEvent::KeyboardInput { device_id: _, input, is_synthetic: _ } => {
+                self.main_component.handle_event(Event::KeyBoard(input));
+            }
+
             _ => {}
         }
         false
@@ -76,8 +83,7 @@ impl ManagedWindow {
     }
 
     pub fn update(&mut self, force_redraw: bool, renderer: &mut Renderer){
-        if self.main_component.changed() || self.redraw || force_redraw {
-
+        if self.main_component.has_changed() || self.redraw || force_redraw {
             renderer.render_screen(self.main_component.deref_mut(), self.display.draw());
             self.redraw = false;
         }

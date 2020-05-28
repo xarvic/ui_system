@@ -62,15 +62,16 @@ implement_vertex!(ColorVertex, position, round_index, color, pixels);
 pub struct GlyphVertex {
     position: [f32; 2],
     coord: [f32; 2],
+    color: [f32; 4],
 }
 
 impl GlyphVertex {
-    fn from(position: Vector, coord: Vector) -> GlyphVertex {
-        GlyphVertex {position: [position.x, position.y], coord: [coord.x, coord.y]}
+    fn from(position: Vector, coord: Vector, color: Color) -> GlyphVertex {
+        GlyphVertex {position: position.into(), coord: coord.into(), color: color.into()}
     }
 }
 
-implement_vertex!(GlyphVertex, position, coord);
+implement_vertex!(GlyphVertex, position, coord, color);
 
 //Border
 

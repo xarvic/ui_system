@@ -29,17 +29,17 @@ impl Button{
 }
 
 impl Component for Button {
-    fn size(&self) -> Vector{
+    fn get_size(&self) -> Vector{
         if let Some(ref inner) = self.inner {
-            inner.size().xy(12.0, 12.0)
+            inner.get_size().xy(12.0, 12.0)
         } else {
             Vector::new(40.0, 40.0)
         }
     }
 
-    fn pref_size(&self) -> Vector{
+    fn get_pref_size(&self) -> Vector{
         if let Some(ref inner) = self.inner {
-            inner.pref_size().xy(12.0, 12.0)
+            inner.get_pref_size().xy(12.0, 12.0)
         } else {
             Vector::new(40.0, 40.0)
         }
@@ -52,8 +52,8 @@ impl Component for Button {
             Color::new(0.5, 0.5, 1.0, 1.0)
         };
 
-        buffer.draw_round_rect(Vector::null(), self.size(), color, [10.0, 10.0, 10.0, 10.0]);
-        buffer.draw_simple_border(Vector::null(), self.size(), Color::new(0.0, 0.5, 1.0, 1.0), 1.0, 10.0);
+        buffer.draw_round_rect(Vector::null(), self.get_size(), color, [10.0, 10.0, 10.0, 10.0]);
+        buffer.draw_simple_border(Vector::null(), self.get_size(), Color::new(0.0, 0.5, 1.0, 1.0), 1.0, 10.0);
 
         if let Some(ref mut inner) = self.inner {
             inner.deref_mut().build(buffer.child_builder(Vector::new(6.0, 6.0)));
@@ -93,7 +93,7 @@ impl Component for Button {
         self.changed
     }
 
-    fn changed(&self) -> bool {
+    fn has_changed(&self) -> bool {
         self.changed
     }
 }

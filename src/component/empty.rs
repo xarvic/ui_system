@@ -6,11 +6,11 @@ use crate::component::event::Event;
 pub struct Empty(Vector);
 
 impl Component for Empty {
-    fn size(&self) -> Vector {
+    fn get_size(&self) -> Vector {
         self.0
     }
 
-    fn pref_size(&self) -> Vector {
+    fn get_pref_size(&self) -> Vector {
         self.0
     }
 
@@ -20,7 +20,7 @@ impl Component for Empty {
         false
     }
 
-    fn changed(&self) -> bool {
+    fn has_changed(&self) -> bool {
         false
     }
 }

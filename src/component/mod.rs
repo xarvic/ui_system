@@ -6,6 +6,7 @@ pub use button::{Button, button};
 mod empty;
 pub use empty::Empty;
 mod text;
+pub use text::{text_field, TextField, Text};
 mod row;
 
 mod collum;

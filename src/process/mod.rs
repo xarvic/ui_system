@@ -59,7 +59,6 @@ fn run(first_window: Option<WindowConstructor>) {
             Event::NewEvents(_cause) => {
                 //Triggert when all events are processed
                 *control = ControlFlow::Wait;
-
                 engine.update_needed();
             }
             Event::UserEvent(command) => {

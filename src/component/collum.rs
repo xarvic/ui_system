@@ -1,10 +1,11 @@
 use crate::component::component::Component;
 use crate::renderer::Builder;
-use crate::component::event::Event;
+use crate::component::event::{Event, MouseEvent};
 use core::position::Vector;
 
 pub struct Collum{
     childs: Vec<Box<dyn Component>>,
+    focused: Option<usize>,
     spacing: f32,
     border: f32,
     width: Option<f32>,
@@ -19,6 +20,7 @@ pub fn collumn() -> Collum {
 impl Collum {
     pub fn new() -> Self{
         Collum{
+            focused: None,
             childs: Vec::new(),
             spacing: 10.0,
             border:10.0,
@@ -28,27 +30,26 @@ impl Collum {
         }
     }
     pub fn child(mut self, child: impl Component + 'static) -> Self{
-        self.size = Vector::new(self.size.x.max(child.size().x), self.size.y + 10.0 + child.size().y);
+        self.size = Vector::new(self.size.x.max(child.get_size().x), self.size.y + 10.0 + child.get_size().y);
         self.childs.push(Box::new(child));
         self
     }
 }
 
 impl Component for Collum {
-    fn size(&self) -> Vector {
+    fn get_size(&self) -> Vector {
         self.size
     }
 
-    fn pref_size(&self) -> Vector {
+    fn get_pref_size(&self) -> Vector {
         self.size
     }
 
     fn build(&mut self, mut builder: Builder) {
-        println!("build!");
         let mut translate_y = 10.0;
         for child in self.childs.iter_mut() {
             child.build(builder.child_builder(Vector::new(10.0, translate_y)));
-            translate_y += 10.0 + child.size().y;
+            translate_y += 10.0 + child.get_size().y;
         }
         self.changed = false;
     }
@@ -59,23 +60,37 @@ impl Component for Collum {
                 if pos.x >= 10.0 && pos.x <= self.size.x - 10.0 {
                     let mut translate_y = 10.0;
 
-                    for child in self.childs.iter_mut() {
-                        if pos.y > translate_y && pos.y < translate_y + child.size().y {
+                    for (index, child) in self.childs.iter_mut().enumerate() {
+                        if pos.y > translate_y && pos.y < translate_y + child.get_size().y {
                             let child_change = child.handle_event(Event::Mouse(pos.xy(-10.0, -translate_y), event));
                             self.changed = self.changed || child_change;
+                            if let MouseEvent::Relased(_) | MouseEvent::Pressed(_) = event {
+                                self.focused = Some(index);
+                            }
+
                             return self.changed;
                         }
 
-                        translate_y += 10.0 + child.size().y;
+                        translate_y += 10.0 + child.get_size().y;
                     }
                 }
+                if let MouseEvent::Relased(_) | MouseEvent::Pressed(_) = event {
+                    self.focused = None;
+                }
             },
-            Event::None => {},
+            event => {
+                if let Some(focused) = self.focused {
+                    if let Some(child) = self.childs.get_mut(focused){
+                        let child_change = child.handle_event(event);
+                        self.changed = self.changed || child_change;
+                    }
+                }
+            }
         }
-        false
+        self.has_changed()
     }
 
-    fn changed(&self) -> bool {
+    fn has_changed(&self) -> bool {
         self.changed
     }
 }
