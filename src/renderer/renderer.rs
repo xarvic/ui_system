@@ -35,6 +35,7 @@ enum ShaderType {
     Framgent,
 }
 
+
 pub enum ShaderError {
     CompilationError(ProgramCreationError),
     ReadingError(std::io::Error),
@@ -172,21 +173,23 @@ pub struct Renderer{
 }
 
 impl Renderer{
-    pub fn new(context: &impl Facade) -> Renderer{
+    pub fn new(context: &impl Facade) -> Result<Renderer, ShaderError> {
         let context = context.get_context();
-        Renderer::from(make_shader_single_file("shaders/rounded.glsl", context).unwrap(),
-                       make_shader_single_file("shaders/glyph.glsl", context).unwrap(),
-                       make_shader_single_file("shaders/border.glsl", context).unwrap(),
+        Ok(Renderer::from(make_shader_single_file("shaders/rounded.glsl", context)?,
+                       make_shader_single_file("shaders/glyph.glsl", context)?,
+                       make_shader_single_file("shaders/border.glsl", context)?,
                        load_texture("data/font2.png", ImageFormat::Png, context),
                        context
-        )
+        ))
     }
     pub fn from(color_rect_program: Program, glyph_program: Program, line_program: Program, glyph_texture: Texture2d, context: &Rc<Context>) -> Renderer{
         Renderer{
             color_rect_program,
             glyph_program,
             line_program,
-            font_buffer: glyph_texture,            context: context.clone()}
+            font_buffer: glyph_texture,
+            context: context.clone()
+        }
     }
     pub fn render(&mut self, buffer: &mut CommandBuffer, frame: &mut Frame){
 

@@ -46,7 +46,7 @@ impl Component for Collum {
     fn build(&mut self, mut builder: Builder) {
         let mut translate_y = self.border;
         for child in self.childs.iter_mut() {
-            child.build(builder.child_builder(Vector::new(10.0, translate_y)));
+            child.build(builder.child_builder(Vector::new(self.border, translate_y)));
             translate_y += self.spacing + child.get_size().y;
         }
         self.changed = false;

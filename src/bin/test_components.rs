@@ -1,22 +1,16 @@
 use native;
 use native::component::*;
-use native::process::window;
-use native::component::component::IntoComponent;
+use native::window;
 
-fn main(){
-    let mut click = 3;
+fn main() {
     window(
         collumn()
             .child(
-                button("Test Text")
-                    .onclick(||println!("clicked!"))
+                row()
+                    .child(button("Test"))
+                    .child((10, 10))
+                    .child(button("Test2"))
             ).child(
-            button("Test Text")
-                .onclick(||println!("clicked!"))
-        ).child(
-            button("Test Text".into_component())
-                .onclick(||println!("clicked!"))
-        ).child(
             text_field("hi")
         )
     )

@@ -1,26 +1,27 @@
-use crate::process::{WindowConstructor, EngineCommand};
+use std::collections::HashMap;
+use std::rc::Rc;
 
+use glium::backend::{Context, Facade};
+use glium::Display;
+use glutin::ContextBuilder;
 use glutin::event::WindowEvent;
 use glutin::event_loop::EventLoop;
 use glutin::window::WindowBuilder;
-use glutin::ContextBuilder;
-
-use glium::Display;
-
-use crate::renderer::Renderer;
-use std::collections::HashMap;
 use glutin::window::WindowId;
-use crate::process::window::ManagedWindow;
-use glium::backend::Facade;
 
+use crate::process::command::EngineCommand;
+use crate::process::windows::{ManagedWindow, WindowConstructor};
+use crate::renderer::Renderer;
+use crate::state::{StateHandle, StorageID};
 
-
-pub struct Engine{
+pub struct Engine {
     renderer: Renderer,
     windows: HashMap<WindowId, ManagedWindow>,
+    states: HashMap<StorageID, StateHandle>,
+    dirty_states: Vec<StorageID>,
 }
 
-impl Engine{
+impl Engine {
     pub fn create(constructor: Option<WindowConstructor>, event_loop: &EventLoop<EngineCommand>) -> Result<Engine, String> {
         let mut windows = HashMap::new();
 
@@ -31,7 +32,7 @@ impl Engine{
             let wb = wb.with_title(constructor.titel.clone().unwrap_or("*Rust UI Window*".to_string()));
 
             let display = Display::new(wb, cb, &event_loop)
-                .map_err(|err|err.to_string())?;
+                .map_err(|err| err.to_string())?;
 
             let context = display.get_context().clone();
 
@@ -46,12 +47,19 @@ impl Engine{
             //    .map_err(|err|"could not create headless opengl context! ")?
         };
 
-        Ok(Engine{windows, renderer: Renderer::new(&context)})
+        Engine::new(windows, &context)
     }
-    pub fn handle_engine_command(&mut self, _command: EngineCommand){
+    fn new(windows: HashMap<WindowId, ManagedWindow>, context: &Rc<Context>) -> Result<Engine, String> {
+        Ok(Engine {
+            windows,
+            renderer: Renderer::new(context).map_err(|e| format!("cant create Renderer: {:?}", e))?,
+            states: HashMap::new(),
+            dirty_states: Vec::new(),
+        })
+    }
 
-    }
-    pub fn handle_window_event(&mut self, event: WindowEvent, id: WindowId){
+    pub fn handle_engine_command(&mut self, _command: EngineCommand) {}
+    pub fn handle_window_event(&mut self, event: WindowEvent, id: WindowId) {
         let mut remove = false;
         if let Some(window) = self.windows.get_mut(&id) {
             window.handle_event(event);
@@ -64,8 +72,18 @@ impl Engine{
     }
     ///
     ///
-    pub fn update_needed(&mut self){
+    pub fn update_needed(&mut self) {
+        self.dirty_states.retain(|id|{
+            match self.states.get(id) {
+                Some(state) => {
+                    state.sync()
+                },
+                None => {false},
+            }
+        });
+
         for window in self.windows.iter_mut() {
+            window.1.state_change(self.dirty_states[..]);
             window.1.update(false, &mut self.renderer);
         }
     }
@@ -73,7 +91,7 @@ impl Engine{
     /// and draws the window if needed
     ///
     /// force_redraw draws the window even if nothing changed
-    pub fn update(&mut self, id: WindowId, force_redraw: bool){
+    pub fn update(&mut self, id: WindowId, force_redraw: bool) {
         if let Some(window) = self.windows.get_mut(&id) {
             window.update(force_redraw, &mut self.renderer);
         }
