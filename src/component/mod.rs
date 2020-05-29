@@ -1,13 +1,14 @@
-pub mod component;
-pub mod event;
+pub use button::{Button, button};
+pub use collum::{Collum, collumn};
+pub use empty::Empty;
+pub use row::{Row, row};
+pub use text::{Text, text_field, TextField};
+pub use component::{Component, IntoComponent};
+
+mod component;
 
 mod button;
-pub use button::{Button, button};
 mod empty;
-pub use empty::Empty;
 mod text;
-pub use text::{text_field, TextField, Text};
 mod row;
-pub use row::{Row, row};
 mod collum;
-pub use collum::{Collum, collumn};

@@ -1,10 +1,10 @@
 use crate::component::component::{Component, IntoComponent};
 use crate::renderer::Builder;
-use crate::component::event::Event;
 use core::position::Vector;
 use core::color::{Color, BLACK};
 
 use glutin::event::{VirtualKeyCode, ElementState};
+use crate::event::Event;
 
 pub struct Text{
     text: String,

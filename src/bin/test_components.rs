@@ -1,11 +1,5 @@
-use native;
-use native::component::*;
-use native::window;
-
-use std::thread;
-use native::process::{init, WindowConstructor};
+use native::prelude::*;
 use std::process::exit;
-use native::state::state;
 
 fn main() {
     init(|mut env| {

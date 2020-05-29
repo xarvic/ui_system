@@ -10,7 +10,7 @@ use std::io::{BufReader, BufRead};
 use std::mem::replace;
 use std::fmt::{Formatter, Debug};
 use glium::index::PrimitiveType;
-use crate::component::component::Component;
+use crate::component::Component;
 
 pub fn make_shader(path: &str, facade: &dyn Facade) -> Program{
     let vertex_shader = read_to_string(String::from(path) + ".vs").expect(&format!("cant read {}.vs", path));

@@ -2,8 +2,8 @@ use crate::component::component::{Component, IntoComponent};
 use crate::renderer::Builder;
 use core::position::Vector;
 use core::color::Color;
-use crate::component::event::{Event, MouseEvent, MouseButton};
 use std::ops::DerefMut;
+use crate::event::{Event, MouseEvent, MouseButton};
 
 pub struct Button {
     inner: Option<Box<dyn Component>>,

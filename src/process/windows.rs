@@ -6,10 +6,10 @@ use glutin::window::WindowId;
 
 use core::position::Vector;
 
-use crate::component::component::Component;
-use crate::component::event::{Event, MouseEvent};
+use crate::component::Component;
 use crate::renderer::Renderer;
 use crate::state::{State, StorageID};
+use crate::event::{Event, MouseEvent};
 
 pub struct WindowConstructor {
     pub(crate) main_component: Box<dyn Component>,
@@ -17,7 +17,7 @@ pub struct WindowConstructor {
     pub(crate) close_handler: Option<Box<dyn FnMut() -> bool>>,
 }
 
-unsafe impl Send for WindowConstructor{}
+unsafe impl Send for WindowConstructor {}
 
 impl WindowConstructor {
     pub fn new(main_component: Box<dyn Component + 'static>) -> WindowConstructor {
@@ -113,9 +113,7 @@ impl ManagedWindow {
         }
         false
     }
-    pub fn state_change(&mut self, state_ids: &[StorageID]){
-
-    }
+    pub fn state_change(&mut self, state_ids: &[StorageID]) {}
 
     pub fn id(&self) -> WindowId {
         self.display.gl_window().window().id()

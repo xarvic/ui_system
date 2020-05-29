@@ -1,7 +1,7 @@
 use crate::renderer::Builder;
 use core::position::Vector;
 use std::ops::{Deref, DerefMut};
-use crate::component::event::Event;
+use crate::event::Event;
 
 pub trait Component{
     fn get_size(&self) -> Vector;

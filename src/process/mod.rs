@@ -1,14 +1,15 @@
+use std::sync::mpsc::channel;
+use std::sync::Mutex;
+use std::thread::spawn;
+
 use glutin::event::Event;
 use glutin::event_loop::{ControlFlow, EventLoop, EventLoopProxy};
 
 pub use windows::{ManagedWindow, window, WindowConstructor};
 
+use crate::process::command::EngineCommand;
 use crate::process::engine::Engine;
 use crate::process::environment::Environment;
-use std::sync::mpsc::channel;
-use std::thread::spawn;
-use crate::process::command::EngineCommand;
-use std::sync::Mutex;
 
 pub mod engine;
 mod windows;
@@ -21,21 +22,20 @@ pub fn send_command(command: EngineCommand) {
     }
 }
 
-lazy_static!{
+lazy_static! {
     static ref QUEUE: Mutex<Option<EventLoopProxy<EngineCommand>>> = {
         Mutex::new(None)
     };
 }
 
 pub fn init(f: impl FnOnce(Environment) + Send + 'static) {
-
     let event_loop = EventLoop::with_user_event();
 
     let mut engine = Engine::create(&event_loop)
         .expect("Could not create the Engine!");
 
     let mut env = Environment::new(event_loop.create_proxy());
-    spawn(||f(env));
+    spawn(|| f(env));
 
     *QUEUE.lock().unwrap() = Some(event_loop.create_proxy());
 

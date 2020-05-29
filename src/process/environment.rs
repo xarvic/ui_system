@@ -1,16 +1,17 @@
-use crate::process::windows::WindowConstructor;
 use std::sync::mpsc::Sender;
-use crate::process::command::EngineCommand;
 
-use glutin::event_loop::{EventLoopProxy};
+use glutin::event_loop::EventLoopProxy;
+
+use crate::process::command::EngineCommand;
+use crate::process::windows::WindowConstructor;
 
 pub struct Environment {
     engine: EventLoopProxy<EngineCommand>,
 }
 
 impl Environment {
-    pub fn new(engine: EventLoopProxy<EngineCommand>) -> Self{
-        Environment{
+    pub fn new(engine: EventLoopProxy<EngineCommand>) -> Self {
+        Environment {
             engine
         }
     }
