@@ -8,7 +8,6 @@ use core::position::Vector;
 
 use crate::component::component::Component;
 use crate::component::event::{Event, MouseEvent};
-use crate::process::new_window;
 use crate::renderer::Renderer;
 use crate::state::{State, StorageID};
 
@@ -17,6 +16,8 @@ pub struct WindowConstructor {
     pub(crate) titel: Option<String>,
     pub(crate) close_handler: Option<Box<dyn FnMut() -> bool>>,
 }
+
+unsafe impl Send for WindowConstructor{}
 
 impl WindowConstructor {
     pub fn new(main_component: Box<dyn Component + 'static>) -> WindowConstructor {
@@ -33,9 +34,6 @@ impl WindowConstructor {
     pub fn on_close(mut self, handler: impl FnMut() -> bool + 'static) -> Self {
         self.close_handler = Some(Box::new(handler));
         self
-    }
-    pub fn open(self) {
-        new_window(self);
     }
 }
 
@@ -54,10 +52,10 @@ pub struct ManagedWindow {
 }
 
 impl ManagedWindow {
-    pub fn new(display: Display, constructor: WindowConstructor) -> (ManagedWindow, WindowId) {
+    pub fn new(display: Display, constructor: WindowConstructor) -> Self {
+        display.gl_window().window().set_visible(true);
         let dpi = display.gl_window().window().current_monitor().scale_factor() as f32;
-        let id = display.gl_window().window().id();
-        (ManagedWindow {
+        ManagedWindow {
             display,
             main_component: constructor.main_component,
             close_handler: constructor.close_handler,
@@ -65,8 +63,10 @@ impl ManagedWindow {
             last_mouse_position: Vector::null(),
             redraw: true,
             closed: false,
-        },
-         id)
+        }
+    }
+    pub fn into_inner(self) -> (Display, Box<dyn Component>) {
+        (self.display, self.main_component)
     }
     pub fn handle_event(&mut self, event: WindowEvent) -> bool {
         match event {
@@ -115,6 +115,10 @@ impl ManagedWindow {
     }
     pub fn state_change(&mut self, state_ids: &[StorageID]){
 
+    }
+
+    pub fn id(&self) -> WindowId {
+        self.display.gl_window().window().id()
     }
 
     pub fn closed(&self) -> bool {

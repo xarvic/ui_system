@@ -1,11 +1,13 @@
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::sync::mpsc::Receiver;
 
 use glium::backend::{Context, Facade};
 use glium::Display;
 use glutin::ContextBuilder;
 use glutin::event::WindowEvent;
 use glutin::event_loop::EventLoop;
+use glutin::event_loop::EventLoopWindowTarget;
 use glutin::window::WindowBuilder;
 use glutin::window::WindowId;
 
@@ -17,48 +19,67 @@ use crate::state::{StateHandle, StorageID};
 pub struct Engine {
     renderer: Renderer,
     windows: HashMap<WindowId, ManagedWindow>,
+    unused_windows: Vec<Display>,
     states: HashMap<StorageID, StateHandle>,
-    dirty_states: Vec<StorageID>,
 }
 
 impl Engine {
-    pub fn create(constructor: Option<WindowConstructor>, event_loop: &EventLoop<EngineCommand>) -> Result<Engine, String> {
+    pub fn create(event_loop: &EventLoop<EngineCommand>) -> Result<Engine, String> {
         let mut windows = HashMap::new();
 
-        let wb = WindowBuilder::new();
-        let cb = ContextBuilder::new();
+        let mut unused = Vec::new();
 
-        let context = if let Some(constructor) = constructor {
-            let wb = wb.with_title(constructor.titel.clone().unwrap_or("*Rust UI Window*".to_string()));
+        for i in 0..3 {
+            let wb = WindowBuilder::new();
+            let cb = ContextBuilder::new();
 
             let display = Display::new(wb, cb, &event_loop)
                 .map_err(|err| err.to_string())?;
+            display.gl_window().window().set_visible(false);
+            unused.push(display);
+        }
+        let wb = WindowBuilder::new();
+        let cb = ContextBuilder::new();
 
-            let context = display.get_context().clone();
+        let display = Display::new(wb, cb, &event_loop)
+            .map_err(|err| err.to_string())?;
 
-            let win = ManagedWindow::new(display, constructor);
+        let context = display.get_context().clone();
 
-            windows.insert(win.1, win.0);
+        display.gl_window().window().set_visible(false);
 
-            context
-        } else {
-            todo!("implement headless build for context");
-            //cb.build_headless(&event_loop, PhysicalSize::new(0, 0))
-            //    .map_err(|err|"could not create headless opengl context! ")?
-        };
+        unused.push(display);
 
-        Engine::new(windows, &context)
+        Engine::new(windows, unused, &context)
     }
-    fn new(windows: HashMap<WindowId, ManagedWindow>, context: &Rc<Context>) -> Result<Engine, String> {
+    fn new(windows: HashMap<WindowId, ManagedWindow>, unused_windows: Vec<Display>, context: &Rc<Context>) -> Result<Engine, String> {
         Ok(Engine {
             windows,
             renderer: Renderer::new(context).map_err(|e| format!("cant create Renderer: {:?}", e))?,
             states: HashMap::new(),
-            dirty_states: Vec::new(),
+            unused_windows,
         })
     }
 
-    pub fn handle_engine_command(&mut self, _command: EngineCommand) {}
+    pub fn handle_engine_command(&mut self, event: EngineCommand) {
+        println!("Got event!");
+        match event {
+            EngineCommand::OpenWindow(con) => {
+                let window = if let Some(display) = self.unused_windows.pop() {
+                    ManagedWindow::new(display, con)
+
+                } else {
+                    panic!("No windows!");
+                };
+                println!("create Window");
+                self.windows.insert(window.id(), window);
+            }
+            EngineCommand::StateChange(id) => {
+                println!("Update ID!");
+            }
+        }
+    }
+
     pub fn handle_window_event(&mut self, event: WindowEvent, id: WindowId) {
         let mut remove = false;
         if let Some(window) = self.windows.get_mut(&id) {
@@ -67,23 +88,17 @@ impl Engine {
         }
         if remove {
             println!("closed window!");
-            self.windows.remove(&id);
+            if let Some(win) = self.windows.remove(&id) {
+                println!("Recycle!");
+                self.unused_windows.push(win.into_inner().0);
+            }
         }
     }
     ///
     ///
     pub fn update_needed(&mut self) {
-        self.dirty_states.retain(|id|{
-            match self.states.get(id) {
-                Some(state) => {
-                    state.sync()
-                },
-                None => {false},
-            }
-        });
-
         for window in self.windows.iter_mut() {
-            window.1.state_change(self.dirty_states[..]);
+            //window.1.state_change(&self.dirty_states[..]);
             window.1.update(false, &mut self.renderer);
         }
     }
