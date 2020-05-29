@@ -2,6 +2,8 @@ use std::rc::{Weak};
 use std::sync::{RwLock, Arc};
 
 use rand::Rng;
+use crate::process::send_command;
+use crate::process::command::EngineCommand;
 
 #[derive(Copy, Clone, Hash, Debug, PartialEq, Eq)]
 pub struct StorageID(u64);
@@ -56,6 +58,7 @@ impl<T: Clone + Send + PartialEq> DynState for RwLock<Storage<T>> {
 
         if new.ne(&storage.value) {
             storage.value = new;
+            println!("Updated State {:?}", storage.id);
             return true;
         }
         return false;
@@ -76,6 +79,7 @@ impl<T: Send + Clone + PartialEq> State<T> {
         match self.inner.write() {
             Ok(mut lock) => {
                 lock.update.push(Box::new(f));
+                send_command(EngineCommand::StateChange(lock.id));
             }
             Err(_) => {
                 //Its nearly imposible not to succed, since the lock is only acquired for short periods of time,
@@ -97,4 +101,8 @@ impl<T: Send + Clone + PartialEq> State<T> {
             }
         }
     }
+}
+
+pub fn state<T: Clone + Send + PartialEq>(value: T) -> State<T>{
+    State::new(value)
 }

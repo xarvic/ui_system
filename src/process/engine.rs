@@ -21,6 +21,7 @@ pub struct Engine {
     windows: HashMap<WindowId, ManagedWindow>,
     unused_windows: Vec<Display>,
     states: HashMap<StorageID, StateHandle>,
+    changed_states: Vec<StorageID>,
 }
 
 impl Engine {
@@ -58,6 +59,7 @@ impl Engine {
             renderer: Renderer::new(context).map_err(|e| format!("cant create Renderer: {:?}", e))?,
             states: HashMap::new(),
             unused_windows,
+            changed_states: Vec::new(),
         })
     }
 
@@ -67,7 +69,6 @@ impl Engine {
             EngineCommand::OpenWindow(con) => {
                 let window = if let Some(display) = self.unused_windows.pop() {
                     ManagedWindow::new(display, con)
-
                 } else {
                     panic!("No windows!");
                 };
@@ -76,6 +77,9 @@ impl Engine {
             }
             EngineCommand::StateChange(id) => {
                 println!("Update ID!");
+                if !self.changed_states.contains(&id) {
+                    self.changed_states.push(id);
+                }
             }
         }
     }
@@ -97,8 +101,24 @@ impl Engine {
     ///
     ///
     pub fn update_needed(&mut self) {
+        let mut updated = Vec::new();
+
+        while let Some(id) = self.changed_states.pop() {
+            let update = if let Some(state) = self.states.get(&id) {
+                //Updating states happens directly before drawing
+                //therefore no inconsistent states can get displayed
+                state.sync()
+            } else {
+                false
+            };
+            if update {
+                updated.push(id);
+            }
+        }
+
+
         for window in self.windows.iter_mut() {
-            //window.1.state_change(&self.dirty_states[..]);
+            window.1.state_change(&updated[..]);
             window.1.update(false, &mut self.renderer);
         }
     }

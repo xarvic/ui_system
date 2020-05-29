@@ -22,7 +22,7 @@ impl Row {
             focused: None,
             childs: Vec::new(),
             spacing: 10.0,
-            border:10.0,
+            border:0.0,
             size: Vector::new(20.0, 20.0),
             changed: false,
         }

@@ -1,5 +1,5 @@
 use glutin::event::Event;
-use glutin::event_loop::{ControlFlow, EventLoop};
+use glutin::event_loop::{ControlFlow, EventLoop, EventLoopProxy};
 
 pub use windows::{ManagedWindow, window, WindowConstructor};
 
@@ -7,11 +7,25 @@ use crate::process::engine::Engine;
 use crate::process::environment::Environment;
 use std::sync::mpsc::channel;
 use std::thread::spawn;
+use crate::process::command::EngineCommand;
+use std::sync::Mutex;
 
-mod engine;
+pub mod engine;
 mod windows;
-mod command;
+pub mod command;
 mod environment;
+
+pub fn send_command(command: EngineCommand) {
+    if let Some(ref queue) = *QUEUE.lock().unwrap() {
+        queue.send_event(command);
+    }
+}
+
+lazy_static!{
+    static ref QUEUE: Mutex<Option<EventLoopProxy<EngineCommand>>> = {
+        Mutex::new(None)
+    };
+}
 
 pub fn init(f: impl FnOnce(Environment) + Send + 'static) {
 
@@ -22,6 +36,8 @@ pub fn init(f: impl FnOnce(Environment) + Send + 'static) {
 
     let mut env = Environment::new(event_loop.create_proxy());
     spawn(||f(env));
+
+    *QUEUE.lock().unwrap() = Some(event_loop.create_proxy());
 
     println!("START!!!!!!");
 
