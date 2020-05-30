@@ -12,6 +12,7 @@ pub(crate) mod process;
 pub mod component;
 pub mod state;
 pub mod event;
+pub mod pool_tree;
 
 pub mod prelude {
     pub use crate::component::{

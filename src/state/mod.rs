@@ -32,6 +32,12 @@ impl<T: Send + Clone + PartialEq> Storage<T> {
 
 pub struct StateHandle(Weak<dyn DynState>);
 
+/// returns which states were used during the call of range
+/// this is usfull to which widgets depend on which states
+fn used_states(range: impl FnMut()) -> Vec<StorageID> {
+    unimplemented!()
+}
+
 impl StateHandle {
     pub fn sync(&self) -> bool {
         if let Some(handle) = self.0.upgrade() {
