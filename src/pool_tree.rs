@@ -16,11 +16,10 @@ impl<T> PoolTree<T> {
         PoolTree {
             buffer: vec![
                 Item {
-                    used: false
-                    next: None,
+                    used: true,
                     value: root,
                     //TODO: change this, its not true, but it works for the moment
-                    parent: 0,
+                    parent: None,
                     childs: Vec::new(),
                 }
             ],
@@ -35,7 +34,7 @@ impl<T> PoolTree<T> {
 
     pub fn get_mut(&mut self, index: usize) -> Option<NodeTop<T>> {
         if let Some(item) = self.buffer.get(index) {
-            if !item.used {
+            if item.used {
                 return Some(unsafe { self.get_unchecked_mut(index) });
             }
         }
@@ -58,7 +57,7 @@ impl<T> PoolTree<T> {
 
     pub fn get(&self, index: usize) -> Option<Node<T>> {
         if let Some(item) = self.buffer.get(index) {
-            if !item.used {
+            if item.used {
                 return Some(unsafe { self.get_unchecked(index) });
             }
         }
