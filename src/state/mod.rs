@@ -4,6 +4,9 @@ use std::sync::{RwLock, Arc};
 use rand::Rng;
 use crate::process::send_command;
 use crate::process::command::EngineCommand;
+use crate::state::registrar::REGISTRAR;
+
+pub mod registrar;
 
 #[derive(Copy, Clone, Hash, Debug, PartialEq, Eq)]
 pub struct StorageID(u64);
@@ -31,12 +34,6 @@ impl<T: Send + Clone + PartialEq> Storage<T> {
 }
 
 pub struct StateHandle(Weak<dyn DynState>);
-
-/// returns which states were used during the call of range
-/// this is usfull to which widgets depend on which states
-fn used_states(range: impl FnMut()) -> Vec<StorageID> {
-    unimplemented!()
-}
 
 impl StateHandle {
     pub fn sync(&self) -> bool {
@@ -98,6 +95,7 @@ impl<T: Send + Clone + PartialEq> State<T> {
     pub fn load(&mut self) -> T {
         match self.inner.read() {
             Ok(lock) => {
+                REGISTRAR.with(|reg|reg.add_used(lock.id));
                 lock.value.clone()
             }
             Err(_) => {
