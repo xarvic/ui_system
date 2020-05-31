@@ -1,7 +1,7 @@
 use crate::component::component::{IntoComponent, Component};
-use core::position::Vector;
 use crate::renderer::Builder;
 use crate::event::Event;
+use crate::core::Vector;
 
 pub struct Empty(Vector);
 

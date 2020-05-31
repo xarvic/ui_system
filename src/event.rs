@@ -1,6 +1,6 @@
-use core::position::Vector;
 pub use glutin::event::MouseButton;
 pub use glutin::event::KeyboardInput;
+use crate::core::Vector;
 
 #[derive(Copy, Clone, Debug)]
 pub enum Event{

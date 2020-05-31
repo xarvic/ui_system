@@ -1,18 +1,16 @@
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::sync::mpsc::Receiver;
 
 use glium::backend::{Context, Facade};
 use glium::Display;
 use glutin::ContextBuilder;
 use glutin::event::WindowEvent;
 use glutin::event_loop::EventLoop;
-use glutin::event_loop::EventLoopWindowTarget;
 use glutin::window::WindowBuilder;
 use glutin::window::WindowId;
 
 use crate::process::command::EngineCommand;
-use crate::process::windows::{ManagedWindow, WindowConstructor};
+use crate::process::windows::ManagedWindow;
 use crate::renderer::Renderer;
 use crate::state::{StateHandle, StorageID};
 
@@ -26,7 +24,7 @@ pub struct Engine {
 
 impl Engine {
     pub fn create(event_loop: &EventLoop<EngineCommand>) -> Result<Engine, String> {
-        let mut windows = HashMap::new();
+        let windows = HashMap::new();
 
         let mut unused = Vec::new();
 

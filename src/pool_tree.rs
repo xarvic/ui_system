@@ -6,8 +6,9 @@ use std::ops::{Deref, DerefMut};
 ///
 /// Since the tree can not contain cycles, it is safe to have mutable references to a node and its
 /// Children
+#[derive(Debug)]
 pub struct PoolTree<T> {
-    buffer: Vec<Item<T>>,
+    pub buffer: Vec<Item<T>>,
     next_free: Option<usize>,
 }
 
@@ -44,7 +45,7 @@ impl<T> PoolTree<T> {
         let rest = self as *mut Self;
         NodeTop {
             inner: NodeMut {
-                current: unsafe { self.buffer.get_unchecked_mut(index) },
+                current: self.buffer.get_unchecked_mut(index),
                 rest,
                 index,
             }
@@ -65,11 +66,12 @@ impl<T> PoolTree<T> {
     }
     pub unsafe fn get_unchecked(&self, index: usize) -> Node<T> {
         Node {
-            current: unsafe { self.buffer.get_unchecked(index) },
+            current: self.buffer.get_unchecked(index),
             rest: self,
             index,
         }
     }
+    //May invalidate all pointers to the Buffer
     unsafe fn alloc_for(&mut self, value: T, parent: usize) -> (usize, &mut Item<T>){
         if let Some(index) = self.next_free {
             //get next free
@@ -86,8 +88,8 @@ impl<T> PoolTree<T> {
         } else {
             //all values are used => allocate a new one
             self.buffer.push(Item::new(value, parent));
-
-            (index, self.buffer.get_unchecked_mut(self.buffer.len() - 1))
+            let index = self.buffer.len() - 1;
+            (index, self.buffer.get_unchecked_mut(index))
         }
     }
     unsafe fn free(&mut self, index: usize) {
@@ -100,9 +102,7 @@ impl<T> PoolTree<T> {
 
 impl<T: Display> Display for PoolTree<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
-        let rest = self as *const Self;
-        unsafe { self.buffer.get_unchecked(0).print(f, rest); }
-        Ok(())
+        self.root().fmt(f)
     }
 }
 
@@ -111,14 +111,15 @@ impl<T: Display> Display for PoolTree<T> {
 /// since this is the Buffer of the pool allocator, it should be a union, but since unions
 /// with non copy fields arent stable at the time, the parent field gets reused to store the next
 /// free index whereas parent == 0 means there are no next free Nodes, null cant be
-struct Item<T> {
+#[derive(Debug)]
+pub struct Item<T> {
     used: bool,
-    value: T,
+    pub value: T,
     parent: Option<usize>,
-    childs: Vec<usize>,
+    pub childs: Vec<usize>,
 }
 
-impl<T: Display> Item<T> {
+impl<T> Item<T> {
     pub fn new(value: T, parent: usize) -> Item<T> {
         Item {
             used: false,
@@ -127,27 +128,30 @@ impl<T: Display> Item<T> {
             childs: Vec::new()
         }
     }
-    fn print(&self, f: &mut Formatter<'_>, rest: *const PoolTree<T>) {
-        if self.childs.is_empty() {
-            self.value.fmt(f);
-        } else {
+}
+impl<T: Display> Item<T> {
+    fn print(&self, f: &mut Formatter<'_>, rest: *const PoolTree<T>) -> Result<(), Error> {
+        self.value.fmt(f)?;
+        if !self.childs.is_empty() {
             let mut it = self.childs.iter();
-            f.write_str("{");
+            f.write_str("{")?;
             //childs is not empty first element exsists
-            unsafe { (&*rest).buffer.get_unchecked(*it.next().unwrap()).print(f, rest); }
+            unsafe { (&*rest).buffer.get_unchecked(*it.next().unwrap()).print(f, rest)?; }
             for i in it {
-                f.write_str(", ");
-                unsafe { (&*rest).buffer.get_unchecked(*i).print(f, rest); }
+                f.write_str(", ")?;
+                unsafe { (&*rest).buffer.get_unchecked(*i).print(f, rest)?; }
             }
 
-            f.write_str("}");
+            f.write_str("}")?;
         }
+        Ok(())
     }
 }
 
 /// a Node directly returned by the PoolTree
 /// it is guaranteed to be the topmost reference into the PoolTree
 /// therefore with this you can make changes to the tree structure
+#[derive(Debug)]
 pub struct NodeTop<'a, T> {
     inner: NodeMut<'a, T>,
 }
@@ -158,13 +162,15 @@ impl<'a, T> NodeTop<'a, T> {
             .map(|index|unsafe { (&mut *self.inner.rest).get_unchecked_mut(index) })
 
     }
-    pub fn to_child(mut self, index: usize) -> Option<NodeTop<'a, T>> {
+    pub fn to_child(self, index: usize) -> Option<NodeTop<'a, T>> {
         self.current.childs.get(index)
             .map(|index|unsafe { (&mut *self.inner.rest).get_unchecked_mut(*index) })
     }
     pub fn add_child(&mut self, value: T) -> NodeMut<'a, T> {
+        //After this self.current is invalid
         let (index, item) = unsafe{ (&mut *self.rest).alloc_for(value, self.index)};
-
+        *self = unsafe{(&mut *self.rest).get_unchecked_mut(self.index)};
+        self.current.childs.push(index);
         NodeMut{
             current: item,
             index,
@@ -190,15 +196,17 @@ impl<'a, T> DerefMut for NodeTop<'a, T> {
     }
 }
 
+#[derive(Debug)]
 pub struct NodeMut<'a, T> {
-    current: &'a mut Item<T>,
+    pub current: &'a mut Item<T>,
     rest: *mut PoolTree<T>,
     index: usize,
 }
 
 impl<'a, T> NodeMut<'a, T> {
     pub fn child_mut(&mut self, index: usize) -> Option<NodeMut<'a, T>> {
-
+        self.current.childs.get(index)
+            .map(|index|unsafe{(&mut *self.rest).get_unchecked_mut(*index).inner})
     }
 }
 
@@ -216,8 +224,9 @@ impl<'a, T> DerefMut for NodeMut<'a, T> {
     }
 }
 
+#[derive(Debug)]
 pub struct Node<'a, T> {
-    current: &'a Item<T>,
+    pub current: &'a Item<T>,
     rest: &'a PoolTree<T>,
     index: usize,
 }
@@ -243,5 +252,11 @@ impl<'a, T> Deref for Node<'a, T> {
 
     fn deref(&self) -> &Self::Target {
         &self.current.value
+    }
+}
+
+impl<'a, T: Display> Display for Node<'a, T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
+        self.current.print(f, self.rest)
     }
 }

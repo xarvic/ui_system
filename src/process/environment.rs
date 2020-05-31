@@ -1,5 +1,3 @@
-use std::sync::mpsc::Sender;
-
 use glutin::event_loop::EventLoopProxy;
 
 use crate::process::command::EngineCommand;
@@ -17,6 +15,7 @@ impl Environment {
     }
 
     pub fn open(&mut self, constructor: WindowConstructor) {
-        self.engine.send_event(EngineCommand::OpenWindow(constructor));
+        //TODO: this is unreliable: handle result
+        let _ = self.engine.send_event(EngineCommand::OpenWindow(constructor));
     }
 }

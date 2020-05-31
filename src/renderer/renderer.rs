@@ -12,22 +12,6 @@ use std::fmt::{Formatter, Debug};
 use glium::index::PrimitiveType;
 use crate::component::Component;
 
-pub fn make_shader(path: &str, facade: &dyn Facade) -> Program{
-    let vertex_shader = read_to_string(String::from(path) + ".vs").expect(&format!("cant read {}.vs", path));
-    let fragment_shader = read_to_string(String::from(path) + ".fs").expect(&format!("cant read {}.fs", path));
-    let geometry_shader = read_to_string(String::from(path) + ".gs").unwrap_or(String::from(""));
-
-    println!("With geometry Shader!");
-
-    let geometry_shader= if geometry_shader.is_empty(){
-        None
-    } else {
-        Some(geometry_shader.as_str())
-    };
-
-    Program::from_source(facade, vertex_shader.as_str(), fragment_shader.as_str(), geometry_shader).expect("Cant create Programm!")
-}
-
 #[derive(Copy, Clone)]
 enum ShaderType {
     Vertex,
@@ -246,10 +230,6 @@ impl Renderer{
         component.build(Builder::create_with(&mut buffer));
 
         self.render(&mut buffer, &mut frame);
-        frame.finish().unwrap();
-    }
-    pub fn render_buffer(&mut self, buffer: &mut CommandBuffer, mut frame: Frame){
-        self.render(buffer, &mut frame);
         frame.finish().unwrap();
     }
 }

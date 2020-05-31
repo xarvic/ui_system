@@ -1,6 +1,5 @@
 use crate::renderer::{ColorVertex, CommandBuffer, GlyphVertex, BorderVertex};
-use core::color::Color;
-use core::position::Vector;
+use crate::core::{Color, Vector};
 
 pub struct Builder<'a>{
     position: Vector,

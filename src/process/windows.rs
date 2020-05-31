@@ -4,12 +4,11 @@ use glium::Display;
 use glutin::event::WindowEvent;
 use glutin::window::WindowId;
 
-use core::position::Vector;
-
 use crate::component::Component;
 use crate::renderer::Renderer;
-use crate::state::{State, StorageID};
 use crate::event::{Event, MouseEvent};
+use crate::core::Vector;
+use crate::state::StorageID;
 
 pub struct WindowConstructor {
     pub(crate) main_component: Box<dyn Component>,

@@ -1,7 +1,7 @@
 use crate::component::component::{Component, IntoComponent};
 use crate::renderer::Builder;
-use core::position::Vector;
 use crate::event::{MouseEvent, Event};
+use crate::core::Vector;
 
 pub struct Row {
     childs: Vec<Box<dyn Component>>,

@@ -1,7 +1,7 @@
 use crate::component::component::Component;
 use crate::renderer::Builder;
-use core::position::Vector;
 use crate::event::{Event, MouseEvent};
+use crate::core::Vector;
 
 pub struct Collum{
     childs: Vec<Box<dyn Component>>,

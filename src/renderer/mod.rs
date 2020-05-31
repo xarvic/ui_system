@@ -3,7 +3,7 @@ use std::vec::Vec;
 mod builder;
 pub use builder::Builder;
 mod renderer;
-pub use renderer::{Renderer, make_shader, make_shader_single_file};
+pub use renderer::{Renderer, make_shader_single_file};
 
 
 use image::ImageFormat;
@@ -11,8 +11,7 @@ use std::rc::Rc;
 use glium::backend::Context;
 use std::fs::read;
 use glium::texture::{texture2d::Texture2d};
-use core::position::Vector;
-use core::color::Color;
+use crate::core::{Vector, Color};
 
 
 pub fn load_texture(path: &str, format: ImageFormat, context: &Rc<Context>) -> Texture2d{

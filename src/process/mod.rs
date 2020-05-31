@@ -1,4 +1,3 @@
-use std::sync::mpsc::channel;
 use std::sync::Mutex;
 use std::thread::spawn;
 
@@ -18,7 +17,8 @@ mod environment;
 
 pub fn send_command(command: EngineCommand) {
     if let Some(ref queue) = *QUEUE.lock().unwrap() {
-        queue.send_event(command);
+        //TODO: handle error
+        let _ = queue.send_event(command);
     }
 }
 
@@ -34,7 +34,7 @@ pub fn init(f: impl FnOnce(Environment) + Send + 'static) {
     let mut engine = Engine::create(&event_loop)
         .expect("Could not create the Engine!");
 
-    let mut env = Environment::new(event_loop.create_proxy());
+    let env = Environment::new(event_loop.create_proxy());
     spawn(|| f(env));
 
     *QUEUE.lock().unwrap() = Some(event_loop.create_proxy());
