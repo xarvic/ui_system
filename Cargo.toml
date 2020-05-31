@@ -1,5 +1,5 @@
 [package]
-name = "native"
+name = "ui_system"
 version = "0.1.0"
 authors = ["xarvic <xarvic@web.de>"]
 edition = "2018"
