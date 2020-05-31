@@ -1,5 +1,6 @@
 use crate::renderer::{ColorVertex, CommandBuffer, GlyphVertex, BorderVertex};
 use crate::core::{Color, Vector};
+use crate::renderer::style::BorderPart;
 
 pub struct Builder<'a>{
     position: Vector,
@@ -76,7 +77,22 @@ impl<'a> Builder<'a>{
         }
     }
 
+    //clockwise starting at right top so part one is the top border
+    pub fn border(&mut self, border_parts: &[BorderPart; 4], corners: [f32; 4]) {
+        //Left Top
+        self.to_point(Vector::new(rounded, 0.0), color, width, true);
+        //Right Top
+        self.border_corner(position.x(size.x), Vector::new(-1.0, 1.0), border_parts[0].color, border_parts[0].width, corners[0]);
+        //Right Bottom
+        self.border_corner(position + size, Vector::new(-1.0, -1.0), border_parts[1].color, border_parts[1].width, corners[1]);
+        //Left Bottom
+        self.border_corner(position.y(size.y), Vector::new(1.0, -1.0), border_parts[2].color, border_parts[2].width, corners[2]);
+        //Left Top
+        self.border_corner(position, Vector::new(1.0, 1.0), border_parts[3].color, border_parts[3].width, corners[3]);
+    }
+
     pub fn simple_border(&mut self, position: Vector, size: Vector, color: Color, width: f32, rounded: f32){
+        //Left Top
         self.to_point(Vector::new(rounded, 0.0), color, width, true);
         //Right Top
         self.border_corner(position.x(size.x), Vector::new(-1.0, 1.0), color, width, rounded);

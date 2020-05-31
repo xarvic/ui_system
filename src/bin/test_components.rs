@@ -1,4 +1,4 @@
-use native::prelude::*;
+use ui_system::prelude::*;
 use std::process::exit;
 
 fn main() {

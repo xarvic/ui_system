@@ -4,6 +4,7 @@ mod builder;
 pub use builder::Builder;
 mod renderer;
 pub use renderer::{Renderer, make_shader_single_file};
+pub mod style;
 
 
 use image::ImageFormat;

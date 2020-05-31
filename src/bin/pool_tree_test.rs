@@ -1,5 +1,5 @@
 #![feature(type_name_of_val)]
-use native::pool_tree::PoolTree;
+use ui_system::pool_tree::PoolTree;
 use std::fmt::{Display, Formatter, Error};
 
 struct Droping(&'static str);

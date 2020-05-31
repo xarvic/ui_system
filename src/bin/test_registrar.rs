@@ -1,5 +1,5 @@
-use native::state::state;
-use native::state::registrar::REGISTRAR;
+use ui_system::state::state;
+use ui_system::state::registrar::REGISTRAR;
 
 fn main() {
     let mut s1 = state(0);
