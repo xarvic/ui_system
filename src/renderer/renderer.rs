@@ -1,6 +1,6 @@
 use glium::backend::{Facade, Context};
 use glium::{Program, DrawParameters, Blend, Frame, Surface, ProgramCreationError};
-use std::fs::{read_to_string, File};
+use std::fs::File;
 use std::rc::Rc;
 use crate::renderer::{load_texture, CommandBuffer, Builder};
 use image::ImageFormat;
@@ -10,7 +10,8 @@ use std::io::{BufReader, BufRead};
 use std::mem::replace;
 use std::fmt::{Formatter, Debug};
 use glium::index::PrimitiveType;
-use crate::component::Component;
+use crate::component::{Component, NewComponent};
+use crate::pool_tree::Node;
 
 #[derive(Copy, Clone)]
 enum ShaderType {
@@ -225,9 +226,9 @@ impl Renderer{
             frame.draw(&verticies, &index_buffer, &self.line_program, &uniforms, &draw_params).expect("Cant render on surface!");
         }
     }
-    pub fn render_screen(&mut self, component: &mut dyn Component, mut frame: Frame){
+    pub fn render_screen(&mut self, component: Node<NewComponent>, mut frame: Frame){
         let mut buffer = CommandBuffer::new();
-        component.build(Builder::create_with(&mut buffer));
+        component.draw(Builder::create_with(&mut buffer));
 
         self.render(&mut buffer, &mut frame);
         frame.finish().unwrap();

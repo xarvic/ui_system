@@ -1,8 +1,11 @@
 use std::fmt::{Display, Error, Formatter};
 use std::ops::{Deref, DerefMut};
+use std::slice::Iter;
 
 /// PoolTree is a structure which stores a Tree inside one allocation using pool allocation inside
-/// the buffer, the root Node is always present and located at index 0.
+/// the buffer, with unchanging IDs
+///
+/// the root Node is always present and located at index 0.
 ///
 /// Since the tree can not contain cycles, it is safe to have mutable references to a node and its
 /// Children
@@ -150,7 +153,7 @@ impl<T: Display> Item<T> {
 
 /// a Node directly returned by the PoolTree
 /// it is guaranteed to be the topmost reference into the PoolTree
-/// therefore with this you can make changes to the tree structure
+/// therefore with this Node you can make changes to the tree structure
 #[derive(Debug)]
 pub struct NodeTop<'a, T> {
     inner: NodeMut<'a, T>,
@@ -204,9 +207,21 @@ pub struct NodeMut<'a, T> {
 }
 
 impl<'a, T> NodeMut<'a, T> {
-    pub fn child_mut(&mut self, index: usize) -> Option<NodeMut<'a, T>> {
+    pub fn child_mut(&mut self, index: usize) -> Option<NodeMut<T>> {
         self.current.childs.get(index)
             .map(|index|unsafe{(&mut *self.rest).get_unchecked_mut(*index).inner})
+    }
+    pub fn childs_mut(&mut self) -> ChildIterMut<T> {
+        ChildIterMut{
+            inner: self.current.childs.iter(),
+            buffer: self.rest,
+        }
+    }
+    pub fn childs(&self) -> ChildIter<T> {
+        ChildIter{
+            inner: self.current.childs.iter(),
+            buffer: unsafe{ &*self.rest },
+        }
     }
 }
 
@@ -221,6 +236,34 @@ impl<'a, T> Deref for NodeMut<'a, T> {
 impl<'a, T> DerefMut for NodeMut<'a, T> {
     fn deref_mut(&mut self) -> &mut T {
         &mut self.current.value
+    }
+}
+
+pub struct ChildIterMut<'a, T: 'a> {
+    inner: Iter<'a, usize>,
+    buffer: *mut PoolTree<T>,
+}
+
+impl<'a, T> Iterator for ChildIterMut<'a, T> {
+    type Item = NodeMut<'a, T>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().map(|index|unsafe{ (&mut *self.buffer).get_unchecked_mut(*index).inner})
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
+
+    fn count(self) -> usize where
+        Self: Sized, {
+        self.inner.count()
+    }
+
+    fn last(self) -> Option<Self::Item> where
+        Self: Sized, {
+        let buffer = self.buffer;
+        self.inner.last().map(|index|unsafe{ (&mut *buffer).get_unchecked_mut(*index).inner})
     }
 }
 
@@ -245,6 +288,12 @@ impl<'a, T> Node<'a, T> {
     pub fn child_count(&self) -> usize {
         self.current.childs.len()
     }
+    pub fn childs(&self) -> ChildIter<T> {
+        ChildIter{
+            inner: self.current.childs.iter(),
+            buffer: self.rest,
+        }
+    }
 }
 
 impl<'a, T> Deref for Node<'a, T> {
@@ -258,5 +307,33 @@ impl<'a, T> Deref for Node<'a, T> {
 impl<'a, T: Display> Display for Node<'a, T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), Error> {
         self.current.print(f, self.rest)
+    }
+}
+
+pub struct ChildIter<'a, T: 'a> {
+    inner: Iter<'a, usize>,
+    buffer: &'a PoolTree<T>,
+}
+
+impl<'a, T> Iterator for ChildIter<'a, T> {
+    type Item = Node<'a, T>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.inner.next().map(|index|unsafe{ self.buffer.get_unchecked(*index)})
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.inner.size_hint()
+    }
+
+    fn count(self) -> usize where
+        Self: Sized, {
+        self.inner.count()
+    }
+
+    fn last(self) -> Option<Self::Item> where
+        Self: Sized, {
+        let buffer = self.buffer;
+        self.inner.last().map(|index|unsafe{ buffer.get_unchecked(*index)})
     }
 }

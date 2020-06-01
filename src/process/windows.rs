@@ -1,17 +1,16 @@
 use std::ops::DerefMut;
 
-use glium::Display;
+use glium::{Display, Surface};
 use glutin::event::WindowEvent;
 use glutin::window::WindowId;
 
-use crate::component::Component;
+use crate::component::NewComponent;
 use crate::renderer::Renderer;
-use crate::event::{Event, MouseEvent};
 use crate::core::Vector;
 use crate::state::StorageID;
+use crate::pool_tree::PoolTree;
 
 pub struct WindowConstructor {
-    pub(crate) main_component: Box<dyn Component>,
     pub(crate) titel: Option<String>,
     pub(crate) close_handler: Option<Box<dyn FnMut() -> bool>>,
 }
@@ -19,10 +18,9 @@ pub struct WindowConstructor {
 unsafe impl Send for WindowConstructor {}
 
 impl WindowConstructor {
-    pub fn new(main_component: Box<dyn Component + 'static>) -> WindowConstructor {
+    pub fn new() -> WindowConstructor {
         WindowConstructor {
             titel: None,
-            main_component,
             close_handler: None,
         }
     }
@@ -36,15 +34,15 @@ impl WindowConstructor {
     }
 }
 
-pub fn window(main_component: impl Component + 'static) -> WindowConstructor {
-    WindowConstructor::new(Box::new(main_component))
+pub fn window() -> WindowConstructor {
+    WindowConstructor::new()
 }
 
 pub struct ManagedWindow {
     display: Display,
-    main_component: Box<dyn Component>,
     close_handler: Option<Box<dyn FnMut() -> bool>>,
     dpi: f32,
+    components: PoolTree<NewComponent>,
     last_mouse_position: Vector,
     redraw: bool,
     closed: bool,
@@ -56,16 +54,16 @@ impl ManagedWindow {
         let dpi = display.gl_window().window().current_monitor().scale_factor() as f32;
         ManagedWindow {
             display,
-            main_component: constructor.main_component,
             close_handler: constructor.close_handler,
             dpi,
             last_mouse_position: Vector::null(),
             redraw: true,
             closed: false,
+            components: PoolTree::new(NewComponent::empty())
         }
     }
-    pub fn into_inner(self) -> (Display, Box<dyn Component>) {
-        (self.display, self.main_component)
+    pub fn into_inner(self) -> Display {
+        self.display
     }
     pub fn handle_event(&mut self, event: WindowEvent) -> bool {
         match event {
@@ -83,7 +81,7 @@ impl ManagedWindow {
                     self.closed = true;
                 }
             }
-            WindowEvent::CursorMoved { position, .. } => {
+            /*WindowEvent::CursorMoved { position, .. } => {
                 self.last_mouse_position = Vector::new(position.x as f32, position.y as f32);
 
                 self.main_component.handle_event(Event::Mouse(self.last_mouse_position, MouseEvent::Moved));
@@ -106,7 +104,7 @@ impl ManagedWindow {
             }
             WindowEvent::KeyboardInput { device_id: _, input, is_synthetic: _ } => {
                 self.main_component.handle_event(Event::KeyBoard(input));
-            }
+            }*/
 
             _ => {}
         }
@@ -123,8 +121,9 @@ impl ManagedWindow {
     }
 
     pub fn update(&mut self, force_redraw: bool, renderer: &mut Renderer) {
-        if self.main_component.has_changed() || self.redraw || force_redraw {
-            renderer.render_screen(self.main_component.deref_mut(), self.display.draw());
+        if self.redraw || force_redraw {
+            renderer.render_screen(self.components.root(), self.display.draw());
+
             self.redraw = false;
         }
     }

@@ -1,4 +1,5 @@
 #![allow(illegal_floating_point_literal_pattern)]
+#![feature(arbitrary_self_types)]
 
 #[macro_use]
 extern crate glium;
