@@ -1,6 +1,7 @@
 use crate::renderer::Builder;
 use std::rc::Rc;
 use crate::core::{Color, Vector};
+use crate::event::{Event, MouseEvent, MouseButton};
 
 #[derive(Clone)]
 pub enum Background {
@@ -44,23 +45,34 @@ impl StyleSheet {
         }
     }
 
-    pub fn background(&self, back: Background) -> Self {
-        StyleSheet {
-            background: Some(back),
-            ..self.clone()
-        }
+    pub fn background(&mut self, back: Background) -> &mut Self {
+        self.background = Some(back);
+        self
     }
-    pub fn simple_border(&self, width: f32, radius: f32, color: Color) -> Self {
+    pub fn backgorund_color(&mut self, red: f32, green: f32, blue: f32) -> &mut Self{
+        self.background(Background::Color(Color::new(red, green, blue, 1.0)));
+        self
+    }
+    pub fn border_radius(&mut self, radius: f32) -> &mut Self {
+        self.border_radius = [
+            radius,
+            radius,
+            radius,
+            radius,
+        ];
+        self
+    }
+
+    pub fn simple_border(&mut self, width: f32, radius: f32, color: Color) -> &mut Self {
         let part = BorderPart{width, color};
-        StyleSheet{
-            parts: Some([
+
+        self.parts = Some([
                 part.clone(),
                 part.clone(),
                 part.clone(),
                 part.clone()
-            ]),
-            ..self.clone()
-        }
+            ]);
+        self
     }
 }
 
@@ -94,6 +106,16 @@ pub struct Style {
 }
 
 impl Style {
+    pub fn new(sheet: Rc<StyleCollection>) -> Self {
+        Style{
+            style: sheet,
+            disabled: false,
+            focused: false,
+            hovered: false,
+            clicked: false,
+        }
+    }
+
     pub fn render<'a>(&self, builder: Builder<'a>, size: &mut Vector) -> Builder<'a> {
         let sheet = if self.disabled {
             &self.style.disabled
@@ -106,6 +128,46 @@ impl Style {
         } else {
             &self.style.idle
         };
+
         sheet.apply(builder, size)
+    }
+    /// changes the state focused, hovered, clicked according to the event
+    ///
+    /// returns if anything changed
+    pub fn apply_event(&mut self, event: Event) -> bool {
+        match event {
+            Event::Mouse(_, event) => {
+                match event {
+                    MouseEvent::Pressed(b) => {
+                        if b == MouseButton::Left && !self.clicked {
+                            self.clicked = true;
+                            return true;
+                        }
+                    },
+                    MouseEvent::Relased(b) => {
+                        if b == MouseButton::Left && self.clicked {
+                            self.clicked = false;
+                            return true;
+                        }
+                    },
+                    MouseEvent::Enter => {
+                        if !self.hovered {
+                            self.hovered = true;
+                            return true;
+                        }
+                    },
+                    MouseEvent::Exit => {
+                        if self.hovered || self.clicked {
+                            self.hovered = false;
+                            self.clicked = false;
+                            return true;
+                        }
+                    },
+                    _ => {},
+                }
+            },
+            _ => {},
+        }
+        return false;
     }
 }

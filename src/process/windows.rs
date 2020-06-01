@@ -6,9 +6,12 @@ use glutin::window::WindowId;
 
 use crate::component::NewComponent;
 use crate::renderer::Renderer;
-use crate::core::Vector;
+use crate::core::{Vector, Color};
 use crate::state::StorageID;
 use crate::pool_tree::PoolTree;
+use crate::renderer::style::{Style, StyleSheet, StyleCollection, Background};
+use std::rc::Rc;
+use crate::event::{Event, MouseEvent};
 
 pub struct WindowConstructor {
     pub(crate) titel: Option<String>,
@@ -52,6 +55,27 @@ impl ManagedWindow {
     pub fn new(display: Display, constructor: WindowConstructor) -> Self {
         display.gl_window().window().set_visible(true);
         let dpi = display.gl_window().window().current_monitor().scale_factor() as f32;
+
+        let mut tree = PoolTree::new(NewComponent::empty());
+
+        let mut sheet = StyleSheet::empty();
+        sheet.backgorund_color(1.0, 0.5, 0.0)
+            .border_radius(20.0);
+
+
+        let mut collection = StyleCollection::unchanged(sheet.clone());
+
+        collection.hovered = sheet.backgorund_color(1.0, 0.2, 0.0).clone();
+        collection.clicked = sheet.backgorund_color(1.0, 0.0, 0.1).clone();
+
+        let collection = Rc::new(collection);
+
+
+
+        let mut node = tree.root_mut();
+        node.style = Some(Style::new(collection));
+        node.size = Vector::new(150.0, 50.0);
+
         ManagedWindow {
             display,
             close_handler: constructor.close_handler,
@@ -59,7 +83,7 @@ impl ManagedWindow {
             last_mouse_position: Vector::null(),
             redraw: true,
             closed: false,
-            components: PoolTree::new(NewComponent::empty())
+            components: tree
         }
     }
     pub fn into_inner(self) -> Display {
@@ -81,30 +105,30 @@ impl ManagedWindow {
                     self.closed = true;
                 }
             }
-            /*WindowEvent::CursorMoved { position, .. } => {
+            WindowEvent::CursorMoved { position, .. } => {
                 self.last_mouse_position = Vector::new(position.x as f32, position.y as f32);
 
-                self.main_component.handle_event(Event::Mouse(self.last_mouse_position, MouseEvent::Moved));
+                self.components.root_mut().as_mut().handle_event(Event::Mouse(self.last_mouse_position, MouseEvent::Moved));
             }
             WindowEvent::CursorEntered { .. } => {
-                self.main_component.handle_event(Event::Mouse(self.last_mouse_position, MouseEvent::Enter));
+                self.components.root_mut().as_mut().handle_event(Event::Mouse(self.last_mouse_position, MouseEvent::Enter));
             }
             WindowEvent::CursorLeft { .. } => {
-                self.main_component.handle_event(Event::Mouse(self.last_mouse_position, MouseEvent::Exit));
+                self.components.root_mut().as_mut().handle_event(Event::Mouse(self.last_mouse_position, MouseEvent::Exit));
             }
             WindowEvent::MouseInput { state, button, .. } => {
                 if let glutin::event::ElementState::Pressed = state {
-                    self.main_component.handle_event(Event::Mouse(self.last_mouse_position, MouseEvent::Pressed(button)));
+                    self.components.root_mut().as_mut().handle_event(Event::Mouse(self.last_mouse_position, MouseEvent::Pressed(button)));
                 } else {
-                    self.main_component.handle_event(Event::Mouse(self.last_mouse_position, MouseEvent::Relased(button)));
+                    self.components.root_mut().as_mut().handle_event(Event::Mouse(self.last_mouse_position, MouseEvent::Relased(button)));
                 }
             }
             WindowEvent::ReceivedCharacter(charac) => {
-                self.main_component.handle_event(Event::Char(charac));
+                self.components.root_mut().as_mut().handle_event(Event::Char(charac));
             }
             WindowEvent::KeyboardInput { device_id: _, input, is_synthetic: _ } => {
-                self.main_component.handle_event(Event::KeyBoard(input));
-            }*/
+                self.components.root_mut().as_mut().handle_event(Event::KeyBoard(input));
+            }
 
             _ => {}
         }
@@ -121,8 +145,8 @@ impl ManagedWindow {
     }
 
     pub fn update(&mut self, force_redraw: bool, renderer: &mut Renderer) {
-        if self.redraw || force_redraw {
-            renderer.render_screen(self.components.root(), self.display.draw());
+        if self.redraw || force_redraw || self.components.root().has_changed() {
+            renderer.render_screen(self.components.root_mut().as_mut(), self.display.draw());
 
             self.redraw = false;
         }

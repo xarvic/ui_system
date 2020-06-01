@@ -11,7 +11,7 @@ use std::mem::replace;
 use std::fmt::{Formatter, Debug};
 use glium::index::PrimitiveType;
 use crate::component::{Component, NewComponent};
-use crate::pool_tree::Node;
+use crate::pool_tree::{Node, NodeMut};
 
 #[derive(Copy, Clone)]
 enum ShaderType {
@@ -226,7 +226,7 @@ impl Renderer{
             frame.draw(&verticies, &index_buffer, &self.line_program, &uniforms, &draw_params).expect("Cant render on surface!");
         }
     }
-    pub fn render_screen(&mut self, component: Node<NewComponent>, mut frame: Frame){
+    pub fn render_screen(&mut self, component: NodeMut<NewComponent>, mut frame: Frame){
         let mut buffer = CommandBuffer::new();
         component.draw(Builder::create_with(&mut buffer));
 

@@ -8,6 +8,7 @@ use crate::renderer::style::Style;
 use crate::renderer::Builder;
 use crate::pool_tree::*;
 use crate::core::Vector;
+use crate::event::Event;
 
 mod component;
 
@@ -18,9 +19,9 @@ mod row;
 mod collum;
 
 pub struct NewComponent {
-    style: Option<Style>,
+    pub style: Option<Style>,
     changed: bool,
-    size: Vector,
+    pub size: Vector,
 }
 
 impl NewComponent {
@@ -31,12 +32,24 @@ impl NewComponent {
             size: Vector::null(),
         }
     }
-    pub fn draw(self: Node<Self>, mut builder: Builder) {
+    pub fn draw(mut self: NodeMut<Self>, mut builder: Builder) {
         let mut inner_size = self.size.clone();
         if let Some(ref style) = self.style {
+            println!("apply css");
             builder = style.render(builder, &mut inner_size);
         }
+        println!("draw component!");
+        self.changed = false;
+        self.childs_mut().map(|child|child.draw(builder.child_builder(Vector::null())));
+    }
 
-        self.childs().map(|child|child.draw(builder.child_builder(Vector::null())));
+    pub fn handle_event(mut self: NodeMut<Self>, event: Event) -> bool {
+        if let Some(ref mut style) = self.style {
+            self.changed |= style.apply_event(event);
+        }
+        self.changed
+    }
+    pub fn has_changed(&self) -> bool {
+        self.changed
     }
 }

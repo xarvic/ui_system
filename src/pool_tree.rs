@@ -11,7 +11,7 @@ use std::slice::Iter;
 /// Children
 #[derive(Debug)]
 pub struct PoolTree<T> {
-    pub buffer: Vec<Item<T>>,
+    buffer: Vec<Item<T>>,
     next_free: Option<usize>,
 }
 
@@ -117,9 +117,9 @@ impl<T: Display> Display for PoolTree<T> {
 #[derive(Debug)]
 pub struct Item<T> {
     used: bool,
-    pub value: T,
+    value: T,
     parent: Option<usize>,
-    pub childs: Vec<usize>,
+    childs: Vec<usize>,
 }
 
 impl<T> Item<T> {
@@ -180,6 +180,9 @@ impl<'a, T> NodeTop<'a, T> {
             rest: self.rest,
         }
     }
+    pub fn as_mut(self) -> NodeMut<'a, T> {
+        self.inner
+    }
     pub fn swap_children(&mut self, index1: usize, index2: usize) -> bool {
         unimplemented!()
     }
@@ -201,7 +204,7 @@ impl<'a, T> DerefMut for NodeTop<'a, T> {
 
 #[derive(Debug)]
 pub struct NodeMut<'a, T> {
-    pub current: &'a mut Item<T>,
+    current: &'a mut Item<T>,
     rest: *mut PoolTree<T>,
     index: usize,
 }
@@ -269,7 +272,7 @@ impl<'a, T> Iterator for ChildIterMut<'a, T> {
 
 #[derive(Debug)]
 pub struct Node<'a, T> {
-    pub current: &'a Item<T>,
+    current: &'a Item<T>,
     rest: &'a PoolTree<T>,
     index: usize,
 }
