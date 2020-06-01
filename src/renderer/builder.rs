@@ -78,9 +78,9 @@ impl<'a> Builder<'a>{
     }
 
     //clockwise starting at right top so part one is the top border
-    pub fn border(&mut self, border_parts: &[BorderPart; 4], corners: [f32; 4]) {
+    pub fn border(&mut self, position: Vector, size: Vector, border_parts: &[BorderPart; 4], corners: [f32; 4]) {
         //Left Top
-        self.to_point(Vector::new(rounded, 0.0), color, width, true);
+        self.to_point(Vector::new(corners[3], 0.0), border_parts[0].color, border_parts[0].width, true);
         //Right Top
         self.border_corner(position.x(size.x), Vector::new(-1.0, 1.0), border_parts[0].color, border_parts[0].width, corners[0]);
         //Right Bottom

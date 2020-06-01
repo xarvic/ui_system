@@ -92,7 +92,7 @@ impl Engine {
             println!("closed window!");
             if let Some(win) = self.windows.remove(&id) {
                 println!("Recycle!");
-                self.unused_windows.push(win.into_inner().0);
+                self.unused_windows.push(win.into_inner());
             }
         }
     }
