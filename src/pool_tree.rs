@@ -210,16 +210,27 @@ pub struct NodeMut<'a, T> {
 }
 
 impl<'a, T> NodeMut<'a, T> {
+    #[inline(always)]
     pub fn child_mut(&mut self, index: usize) -> Option<NodeMut<T>> {
         self.current.childs.get(index)
             .map(|index|unsafe{(&mut *self.rest).get_unchecked_mut(*index).inner})
     }
+    #[inline(always)]
     pub fn childs_mut(&mut self) -> ChildIterMut<T> {
         ChildIterMut{
             inner: self.current.childs.iter(),
             buffer: self.rest,
         }
     }
+    #[inline(always)]
+    pub fn this(&mut self) -> NodeMut<T> {
+        NodeMut{
+            current: self.current,
+            rest: self.rest,
+            index: self.index,
+        }
+    }
+    #[inline(always)]
     pub fn childs(&self) -> ChildIter<T> {
         ChildIter{
             inner: self.current.childs.iter(),

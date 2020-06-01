@@ -93,10 +93,16 @@ impl<T: Send + Clone + PartialEq> State<T> {
     }
 
     pub fn load(&mut self) -> T {
+        let data = self.load_anonymus();
+        REGISTRAR.with(|reg|reg.add_used(data.1));
+        data.0
+    }
+    /// Loads a value without registering it
+    /// This is useful for atomic elements like Sliders, TextFields, etc.
+    pub(crate) fn load_anonymus(&mut self) -> (T, StorageID) {
         match self.inner.read() {
             Ok(lock) => {
-                REGISTRAR.with(|reg|reg.add_used(lock.id));
-                lock.value.clone()
+                (lock.value.clone(), lock.id.clone())
             }
             Err(_) => {
                 //Its nearly imposible not to succed, since the lock is only acquired for short periods of time,

@@ -4,92 +4,68 @@ use crate::renderer::Builder;
 use glutin::event::{VirtualKeyCode, ElementState};
 use crate::event::Event;
 use crate::core::*;
+use crate::state::State;
 
 pub struct Text{
-    text: String,
-    size: f32,
-    color: Color,
+    pub text: String,
+    pub size: f32,
+    pub color: Color,
 }
 
 impl Text {
     pub fn new(text: String) -> Text {
         Text{text, size: 20.0, color: BLACK}
     }
-    pub fn size(mut self, size: f32) -> Self {
-        self.size = size;
-        self
-    }
-    pub fn color(mut self, color: Color) -> Self {
-        self.color = color;
-        self
-    }
 
+    #[inline(always)]
     pub fn width(&self) -> f32 {
         (self.size * 36.0 / 70.0).floor()
     }
-}
 
-impl Component for Text {
-    fn get_size(&self) -> Vector {
-        self.get_pref_size()
-    }
-
-    fn get_pref_size(&self) -> Vector {
+    #[inline(always)]
+    pub fn get_pref_size(&self) -> Vector {
         Vector::new(self.text.len() as f32 * self.width(), self.size)
     }
 
-    fn build(&mut self, builder: Builder) {
+    #[inline(always)]
+    pub fn build(&self, builder: &mut Builder) {
         draw_string(builder, &self.text, self.color, Vector::null(), self.size);
-    }
-
-    fn handle_event(&mut self, _event: Event) -> bool {
-        false
-    }
-
-    fn has_changed(&self) -> bool {
-        false
     }
 }
 
 pub struct TextField {
-    inner: Text,
+    current: Text,
+    state: State<String>,
     cursor: usize,
     edited: bool,
 }
 
 impl TextField {
-    pub fn new(text: Text) -> TextField{
+    pub fn new(mut state: State<String>) -> TextField{
+        //TODO: register
+        let text = Text::new(state.load_anonymus().0);
         let cursor = text.text.len();
         TextField{
-            inner: text,
+            current: text,
+            state,
             cursor,
             edited: false
         }
     }
-}
 
-impl Component for TextField {
-    fn get_size(&self) -> Vector {
-        self.inner.get_size().xy(6.0, 6.0)
+    pub fn get_pref_size(&self) -> Vector {
+        self.current.get_pref_size().xy(6.0, 6.0)
     }
 
-    fn get_pref_size(&self) -> Vector {
-        self.inner.get_pref_size().xy(6.0, 6.0)
-    }
-
-    fn build(&mut self, mut builder: Builder) {
-        builder.round_rect(Vector::null(),
-                           self.get_size(),
-                           Color::new(0.0, 0.0, 0.0, 0.2),
-                           [3.0, 3.0, 3.0, 3.0]);
-        builder.rect(Vector::new(self.cursor as f32 * self.inner.width() as f32 + 3.0, 3.0),
-                     Vector::new(self.cursor as f32 * self.inner.width() as f32 + 4.0, self.inner.size + 3.0),
-                     self.inner.color);
-        self.inner.build(builder.child_builder(Vector::new(3.0, 3.0)));
+    pub fn build<'a>(&'a mut self, builder: &mut Builder<'a>) {
+        builder.rect(Vector::new(self.cursor as f32 * self.current.width() as f32, 0.0),
+                     Vector::new(self.cursor as f32 * self.current.width() as f32 + 1.0, self.current.size),
+                     self.current.color);
+        self.current.build(builder);
         self.edited = false;
     }
 
-    fn handle_event(&mut self, event: Event) -> bool {
+    pub fn handle_event(&mut self, event: Event) -> bool {
         match event {
             Event::Mouse(_, _) => {},
             Event::KeyBoard(key) => {
@@ -99,8 +75,8 @@ impl Component for TextField {
                 if let Some(v) = key.virtual_keycode {
                     match v {
                         VirtualKeyCode::Delete => {
-                            if  self.cursor < self.inner.text.len() {
-                                self.inner.text.remove(self.cursor);
+                            if  self.cursor < self.current.text.len() {
+                                self.current.text.remove(self.cursor);
                                 self.edited = true;
                             }
                         }
@@ -111,7 +87,7 @@ impl Component for TextField {
                             }
                         }
                         VirtualKeyCode::Right => {
-                            if self.cursor < self.inner.text.len() {
+                            if self.cursor < self.current.text.len() {
                                 self.cursor += 1;
                                 self.edited = true;
                             }
@@ -129,12 +105,12 @@ impl Component for TextField {
                     //Remove code
                     if self.cursor > 0 {
                         //Remove previous
-                        self.inner.text.remove(self.cursor - 1);
+                        self.current.text.remove(self.cursor - 1);
                         self.cursor -= 1;
                         self.edited = true;
                     }
                 } else {
-                    self.inner.text.insert(self.cursor, c);
+                    self.current.text.insert(self.cursor, c);
                     self.cursor += 1;
                     self.edited = true;
                 }
@@ -144,16 +120,13 @@ impl Component for TextField {
         self.has_changed()
     }
 
-    fn has_changed(&self) -> bool {
+    pub fn has_changed(&self) -> bool {
         self.edited
     }
 }
 
-pub fn text_field(initial: &str) -> TextField{
-    TextField::new(initial.into_component())
-}
-
-fn draw_string(mut builder: Builder, text: &str, color: Color, pos: Vector, size: f32){
+#[inline(always)]
+fn draw_string(builder: &mut Builder, text: &str, color: Color, pos: Vector, size: f32){
     let width = (size * 36.0 / 70.0).floor();
 
     let mut x = 0.0f32;
@@ -174,13 +147,5 @@ fn draw_string(mut builder: Builder, text: &str, color: Color, pos: Vector, size
 
         builder.glyph(pos.x(x), pos.xy(x + width, size), index, color);
         x += width;
-    }
-}
-
-impl IntoComponent for &str {
-    type Component = Text;
-
-    fn into_component(self) -> Self::Component {
-        Text::new(self.to_string())
     }
 }

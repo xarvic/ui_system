@@ -4,11 +4,11 @@ use glium::{Display, Surface};
 use glutin::event::WindowEvent;
 use glutin::window::WindowId;
 
-use crate::component::NewComponent;
+use crate::component::{NewComponent, Content, Text};
 use crate::renderer::Renderer;
 use crate::core::{Vector, Color};
 use crate::state::StorageID;
-use crate::pool_tree::PoolTree;
+use crate::pool_tree::{PoolTree, NodeTop};
 use crate::renderer::style::{Style, StyleSheet, StyleCollection, Background};
 use std::rc::Rc;
 use crate::event::{Event, MouseEvent};
@@ -41,6 +41,24 @@ pub fn window() -> WindowConstructor {
     WindowConstructor::new()
 }
 
+fn test_node(mut node: NodeTop<NewComponent>) {
+    let mut sheet = StyleSheet::empty();
+    //sheet.backgorund_color(1.0, 0.5, 0.0)
+    //    .border_radius(20.0);
+
+
+    let mut collection = StyleCollection::unchanged(sheet.clone());
+
+    collection.hovered = sheet.backgorund_color(1.0, 0.2, 0.0).clone();
+    collection.clicked = sheet.backgorund_color(1.0, 0.0, 0.1).clone();
+
+    let collection = Rc::new(collection);
+
+    node.style = Some(Style::new(collection));
+    node.size = Vector::new(150.0, 50.0);
+    node.content = Content::Text(Text::new("Hi ich bins".to_owned()));
+}
+
 pub struct ManagedWindow {
     display: Display,
     close_handler: Option<Box<dyn FnMut() -> bool>>,
@@ -58,23 +76,7 @@ impl ManagedWindow {
 
         let mut tree = PoolTree::new(NewComponent::empty());
 
-        let mut sheet = StyleSheet::empty();
-        sheet.backgorund_color(1.0, 0.5, 0.0)
-            .border_radius(20.0);
-
-
-        let mut collection = StyleCollection::unchanged(sheet.clone());
-
-        collection.hovered = sheet.backgorund_color(1.0, 0.2, 0.0).clone();
-        collection.clicked = sheet.backgorund_color(1.0, 0.0, 0.1).clone();
-
-        let collection = Rc::new(collection);
-
-
-
-        let mut node = tree.root_mut();
-        node.style = Some(Style::new(collection));
-        node.size = Vector::new(150.0, 50.0);
+        test_node(tree.root_mut());
 
         ManagedWindow {
             display,

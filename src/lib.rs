@@ -19,10 +19,7 @@ pub mod core;
 pub mod prelude {
     pub use crate::component::{
         button, Button,
-        Collum,
-        collumn, row,
-        Row, Text,
-        text_field, TextField,
+        Text, TextField,
         Component, IntoComponent};
     pub use crate::process::{init, window, WindowConstructor};
     pub use crate::state::{state, State, StorageID};
