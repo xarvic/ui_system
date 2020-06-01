@@ -18,9 +18,9 @@ pub mod core;
 
 pub mod prelude {
     pub use crate::component::{
-        button, Button,
+        Button,
         Text, TextField,
-        Component, IntoComponent};
+        };
     pub use crate::process::{init, window, WindowConstructor};
     pub use crate::state::{state, State, StorageID};
 }

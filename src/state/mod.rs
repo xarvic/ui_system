@@ -68,6 +68,7 @@ impl<T: Clone + Send + PartialEq> DynState for RwLock<Storage<T>> {
     }
 }
 
+#[derive(Clone)]
 pub struct State<T: Send + Clone + PartialEq> {
     inner: Arc<RwLock<Storage<T>>>,
 }
@@ -93,13 +94,13 @@ impl<T: Send + Clone + PartialEq> State<T> {
     }
 
     pub fn load(&mut self) -> T {
-        let data = self.load_anonymus();
+        let data = self.load_anonymous();
         REGISTRAR.with(|reg|reg.add_used(data.1));
         data.0
     }
     /// Loads a value without registering it
     /// This is useful for atomic elements like Sliders, TextFields, etc.
-    pub(crate) fn load_anonymus(&mut self) -> (T, StorageID) {
+    pub(crate) fn load_anonymous(&mut self) -> (T, StorageID) {
         match self.inner.read() {
             Ok(lock) => {
                 (lock.value.clone(), lock.id.clone())

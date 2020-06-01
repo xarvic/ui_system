@@ -15,6 +15,8 @@ impl StateUseRegistrar {
             non_sync: PhantomData,
         }
     }
+    /// returns which states were used during the call of range
+    /// this is usfull to which widgets depend on which states
     pub fn used_states(&self, range: impl FnOnce()) -> Vec<StorageID> {
         //inserting a new counter
         let old = unsafe{self.swap(Some(Vec::new()))};
@@ -36,9 +38,6 @@ impl StateUseRegistrar {
         replace(self.used.get(), data)
     }
 }
-
-/// returns which states were used during the call of range
-/// this is usfull to which widgets depend on which states
 
 
 

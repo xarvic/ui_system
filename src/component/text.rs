@@ -1,4 +1,3 @@
-use crate::component::component::{Component, IntoComponent};
 use crate::renderer::Builder;
 
 use glutin::event::{VirtualKeyCode, ElementState};
@@ -37,19 +36,17 @@ pub struct TextField {
     current: Text,
     state: State<String>,
     cursor: usize,
-    edited: bool,
 }
 
 impl TextField {
     pub fn new(mut state: State<String>) -> TextField{
         //TODO: register
-        let text = Text::new(state.load_anonymus().0);
+        let text = Text::new(state.load_anonymous().0);
         let cursor = text.text.len();
         TextField{
             current: text,
             state,
             cursor,
-            edited: false
         }
     }
 
@@ -57,15 +54,15 @@ impl TextField {
         self.current.get_pref_size().xy(6.0, 6.0)
     }
 
-    pub fn build<'a>(&'a mut self, builder: &mut Builder<'a>) {
+    pub fn build(&self, builder: &mut Builder) {
         builder.rect(Vector::new(self.cursor as f32 * self.current.width() as f32, 0.0),
                      Vector::new(self.cursor as f32 * self.current.width() as f32 + 1.0, self.current.size),
                      self.current.color);
         self.current.build(builder);
-        self.edited = false;
     }
 
     pub fn handle_event(&mut self, event: Event) -> bool {
+        let mut edited = false;
         match event {
             Event::Mouse(_, _) => {},
             Event::KeyBoard(key) => {
@@ -76,20 +73,22 @@ impl TextField {
                     match v {
                         VirtualKeyCode::Delete => {
                             if  self.cursor < self.current.text.len() {
+                                let c = self.cursor;
+                                self.state.update(move |mut str| {str.remove(c); str});
                                 self.current.text.remove(self.cursor);
-                                self.edited = true;
+                                edited = true;
                             }
                         }
                         VirtualKeyCode::Left => {
                             if self.cursor > 0 {
                                 self.cursor -= 1;
-                                self.edited = true;
+                                edited = true;
                             }
                         }
                         VirtualKeyCode::Right => {
                             if self.cursor < self.current.text.len() {
                                 self.cursor += 1;
-                                self.edited = true;
+                                edited = true;
                             }
                         }
                         _ => {}
@@ -106,22 +105,24 @@ impl TextField {
                     if self.cursor > 0 {
                         //Remove previous
                         self.current.text.remove(self.cursor - 1);
+                        let c = self.cursor;
+                        self.state.update(move |mut str|{str.remove(c - 1); str});
                         self.cursor -= 1;
-                        self.edited = true;
+                        edited = true;
                     }
                 } else {
                     self.current.text.insert(self.cursor, c);
+                    let cur = self.cursor;
+                    self.state.update(move |mut str|{str.insert(cur, c); str});
                     self.cursor += 1;
-                    self.edited = true;
+                    edited = true;
                 }
             },
             _ => {},
         }
-        self.has_changed()
-    }
 
-    pub fn has_changed(&self) -> bool {
-        self.edited
+
+        edited
     }
 }
 

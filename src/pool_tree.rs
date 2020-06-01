@@ -237,6 +237,10 @@ impl<'a, T> NodeMut<'a, T> {
             buffer: unsafe{ &*self.rest },
         }
     }
+    #[inline(always)]
+    fn split(&mut self) -> (&mut T, ChildsMut<T>) {
+        (&mut self.current.value, ChildsMut{indices: &mut self.current.childs, buffer: self.rest})
+    }
 }
 
 impl<'a, T> Deref for NodeMut<'a, T> {
@@ -278,6 +282,27 @@ impl<'a, T> Iterator for ChildIterMut<'a, T> {
         Self: Sized, {
         let buffer = self.buffer;
         self.inner.last().map(|index|unsafe{ (&mut *buffer).get_unchecked_mut(*index).inner})
+    }
+}
+
+pub struct ChildsMut<'a, T> {
+    indices: &'a Vec<usize>,
+    buffer: *mut PoolTree<T>
+}
+
+impl<'a, T> ChildsMut<'a, T> {
+
+    #[inline(always)]
+    pub fn childs_mut(&mut self) -> ChildIterMut<T> {
+        ChildIterMut{
+            inner: self.indices.iter(),
+            buffer: self.buffer,
+        }
+    }
+    #[inline(always)]
+    pub fn child_mut(&mut self, index: usize) -> Option<NodeMut<T>> {
+        self.indices.get(index)
+            .map(|index|unsafe{(&mut *self.buffer).get_unchecked_mut(*index).inner})
     }
 }
 

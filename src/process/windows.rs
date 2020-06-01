@@ -4,10 +4,10 @@ use glium::{Display, Surface};
 use glutin::event::WindowEvent;
 use glutin::window::WindowId;
 
-use crate::component::{NewComponent, Content, Text};
+use crate::component::{NewComponent, Content, Text, TextField};
 use crate::renderer::Renderer;
-use crate::core::{Vector, Color};
-use crate::state::StorageID;
+use crate::core::Vector;
+use crate::state::{StorageID, state};
 use crate::pool_tree::{PoolTree, NodeTop};
 use crate::renderer::style::{Style, StyleSheet, StyleCollection, Background};
 use std::rc::Rc;
@@ -56,7 +56,8 @@ fn test_node(mut node: NodeTop<NewComponent>) {
 
     node.style = Some(Style::new(collection));
     node.size = Vector::new(150.0, 50.0);
-    node.content = Content::Text(Text::new("Hi ich bins".to_owned()));
+    let state = state("Test".to_owned());
+    node.content = Content::TextField(TextField::new(state.clone()));
 }
 
 pub struct ManagedWindow {

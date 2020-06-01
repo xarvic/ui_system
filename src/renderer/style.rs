@@ -115,9 +115,8 @@ impl Style {
             clicked: false,
         }
     }
-
-    pub fn render<'a>(&self, builder: Builder<'a>, size: &mut Vector) -> Builder<'a> {
-        let sheet = if self.disabled {
+    pub fn current_sheet(&self) -> &StyleSheet {
+        if self.disabled {
             &self.style.disabled
         } else if self.clicked {
             &self.style.clicked
@@ -127,7 +126,10 @@ impl Style {
             &self.style.focused
         } else {
             &self.style.idle
-        };
+        }
+    }
+    pub fn render<'a>(&self, builder: Builder<'a>, size: &mut Vector) -> Builder<'a> {
+        let sheet = self.current_sheet();
 
         sheet.apply(builder, size)
     }
@@ -170,4 +172,21 @@ impl Style {
         }
         return false;
     }
+
+    pub fn shift(&self) -> Vector {
+        if let Some(ref border) = self.current_sheet().parts {
+            Vector::new(border[1].width + border[3].width, border[0].width + border[2].width)
+        } else {
+            Vector::null()
+        }
+    }
+
+    pub fn size(&self) -> Vector {
+        if let Some(ref border) = self.current_sheet().parts {
+            Vector::new(border[3].width, border[0].width)
+        } else {
+            Vector::null()
+        }
+    }
+
 }

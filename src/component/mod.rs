@@ -1,26 +1,23 @@
-pub use button::{Button, button};
-pub use empty::Empty;
+pub use button::Button;
 pub use text::{Text, TextField};
-pub use component::{Component, IntoComponent};
 use crate::renderer::style::Style;
 use crate::renderer::Builder;
 use crate::pool_tree::*;
 use crate::core::Vector;
 use crate::event::Event;
-
-mod component;
+use crate::component::layout::Layout;
 
 mod button;
-mod empty;
 mod text;
+mod layout;
 
 pub enum Content{
     Empty,
     Text(Text),
     TextField(TextField),
-    Button(),
+    Button(Button),
     Slider(),
-    Container(),
+    Container(Box<dyn Layout>),
 
 }
 
@@ -87,9 +84,11 @@ impl NewComponent {
             Content::TextField(ref mut field) => {
                 field.handle_event(event)
             },
-            Content::Button() => {false},
+            Content::Button(ref mut button) => {
+                button.handle_event(event)
+            },
             Content::Slider() => {false},
-            Content::Container() => {false},
+            Content::Container(_) => {false},
         }
     }
     #[inline(always)]
@@ -99,10 +98,12 @@ impl NewComponent {
             Content::Text(ref text) => {
                 text.build(&mut builder)
             },
-            Content::TextField(_) => {},
-            Content::Button() => {},
+            Content::TextField(ref field) => {
+                field.build(&mut builder)
+            },
+            Content::Button(_) => {},
             Content::Slider() => {},
-            Content::Container() => {},
+            Content::Container(_) => {},
         }
         builder
     }

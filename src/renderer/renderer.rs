@@ -10,8 +10,8 @@ use std::io::{BufReader, BufRead};
 use std::mem::replace;
 use std::fmt::{Formatter, Debug};
 use glium::index::PrimitiveType;
-use crate::component::{Component, NewComponent};
-use crate::pool_tree::{Node, NodeMut};
+use crate::pool_tree::NodeMut;
+use crate::component::NewComponent;
 
 #[derive(Copy, Clone)]
 enum ShaderType {
