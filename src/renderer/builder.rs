@@ -119,10 +119,10 @@ impl<'a> Builder<'a>{
 
     //Builder Options
 
-    pub fn child_builder(&mut self, relative_position: Vector) -> Builder{
-        Builder{position: self.position + relative_position, buffer: self.buffer}
+    pub fn translate(&mut self, relative_position: Vector){
+        self.position += relative_position;
     }
-    pub fn using(&'a mut self) -> Builder<'a> {
+    pub fn id<'b>(&'b mut self) -> Builder<'b> {
         Builder{
             position: self.position,
             buffer: self.buffer

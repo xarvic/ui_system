@@ -6,7 +6,7 @@ use glutin::window::WindowId;
 
 use crate::component::{NewComponent, Content, Text, TextField};
 use crate::renderer::Renderer;
-use crate::core::Vector;
+use crate::core::{Vector, Color};
 use crate::state::{StorageID, state};
 use crate::pool_tree::{PoolTree, NodeTop};
 use crate::renderer::style::{Style, StyleSheet, StyleCollection, Background};
@@ -50,7 +50,8 @@ fn test_node(mut node: NodeTop<NewComponent>) {
     let mut collection = StyleCollection::unchanged(sheet.clone());
 
     collection.hovered = sheet.backgorund_color(1.0, 0.2, 0.0).clone();
-    collection.clicked = sheet.backgorund_color(1.0, 0.0, 0.1).clone();
+    collection.clicked = sheet.backgorund_color(1.0, 0.0, 0.1)
+        .simple_border(5.0, 5.0, Color::new(1.0, 0.2, 0.2, 1.0)).clone();
 
     let collection = Rc::new(collection);
 
@@ -147,6 +148,16 @@ impl ManagedWindow {
         self.closed
     }
 
+
+    //The update order is
+    // - event triggert
+    //   - component change registert vie changed flag
+    //   - state changed
+    //-------------Event Pipeline------------
+    // - engine updates state
+    //   - window changes affected widgets
+    //   - window updates layout
+    //   - redraw
     pub fn update(&mut self, force_redraw: bool, renderer: &mut Renderer) {
         if self.redraw || force_redraw || self.components.root().has_changed() {
             renderer.render_screen(self.components.root_mut().as_mut(), self.display.draw());

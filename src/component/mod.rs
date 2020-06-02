@@ -5,7 +5,7 @@ use crate::renderer::Builder;
 use crate::pool_tree::*;
 use crate::core::Vector;
 use crate::event::Event;
-use crate::component::layout::Layout;
+use crate::component::layout::{Layout, PreferredSize};
 
 mod button;
 mod text;
@@ -26,6 +26,8 @@ pub struct NewComponent {
     pub content: Content,
     changed: bool,
     pub size: Vector,
+    pub preferred_size: PreferredSize,
+    pub pos: Vector,
 }
 
 impl NewComponent {
@@ -35,17 +37,22 @@ impl NewComponent {
             content: Content::Empty,
             changed: false,
             size: Vector::null(),
+            pos: Vector::null(),
+            preferred_size: PreferredSize::empty(),
         }
     }
     pub fn draw(mut self: NodeMut<Self>, mut builder: Builder) {
         let mut inner_size = self.size.clone();
         if let Some(ref style) = self.style {
-            builder = style.render(builder, &mut inner_size);
+            style.render(builder.id(), self.size);
+            builder.translate(style.shift());
         }
-        self.this().draw_content(builder.child_builder(Vector::null()));
+
+
+        self.this().draw_content(builder.id());
         self.changed = false;
         for child in self.childs_mut() {
-            child.draw(builder.child_builder(Vector::null()))
+            child.draw(builder.id())
         }
     }
 
@@ -68,7 +75,6 @@ impl NewComponent {
         } else {
             self.changed = true;
         }
-
 
         self.changed
     }
@@ -106,5 +112,11 @@ impl NewComponent {
             Content::Container(_) => {},
         }
         builder
+    }
+    pub fn size(&self) -> Vector {
+        self.size
+    }
+    pub fn preferred_size(&self) -> PreferredSize {
+        self.preferred_size
     }
 }
