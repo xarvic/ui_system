@@ -10,6 +10,16 @@ pub enum Event{
     None,
 }
 
+impl Event{
+    pub fn shift(self, shift: Vector) -> Self {
+        if let Event::Mouse(pos, event) = self {
+            Event::Mouse(pos + shift, event)
+        } else {
+            self
+        }
+    }
+}
+
 #[derive(Copy, Clone, Debug)]
 pub enum MouseEvent{
     Moved,

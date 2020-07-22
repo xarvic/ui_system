@@ -2,7 +2,7 @@ use crate::core::Vector;
 use crate::pool_tree::ChildsMut;
 use crate::component::NewComponent;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct PreferredSize{
     pub preferred: Vector,
     /// None if the component is not growing horizonal
@@ -12,63 +12,78 @@ pub struct PreferredSize{
 }
 
 impl PreferredSize {
-    pub fn new(x: f32, y: f32, grow_x: Option<f32>, grow_y: Option<f32>) -> Self{
+    pub fn growing(size: Vector, grow_x: Option<f32>, grow_y: Option<f32>) -> Self{
         PreferredSize{
-            preferred: Vector::new(x, y),
+            preferred: size,
             grow_x,
             grow_y,
         }
     }
-    pub fn empty() -> Self {
-        Self::new(0.0, 0.0, None, None)
+    pub fn fixed(size: Vector) -> Self{
+    PreferredSize{
+            preferred: size,
+            grow_x: None,
+            grow_y: None,
+        }
     }
-    #[inline(always)]
+
+    pub fn empty() -> Self {
+        Self::fixed(Vector::null())
+    }
+    #[inline]
     pub fn min_x(&self) -> f32 {
         self.grow_x.unwrap_or_else(||self.preferred.x)
     }
-    #[inline(always)]
+    #[inline]
     pub fn min_y(&self) -> f32 {
         self.grow_y.unwrap_or_else(||self.preferred.y)
     }
-    #[inline(always)]
-    pub fn grow_x(&self) -> bool {
-        self.grow_x.is_some()
+    #[inline]
+    pub fn chained_y(&self, pref: PreferredSize) -> PreferredSize{
+        PreferredSize::growing(
+            Vector::new(
+                self.preferred.x.max(pref.preferred.x),
+                self.preferred.y + pref.preferred.y,
+            ),
+            self.grow_x
+                .or(pref.grow_x)
+                .map(|_|self.min_x().max(pref.min_x())),
+            self.grow_y
+                .or(pref.grow_y)
+                .map(|_|self.min_y() + pref.min_y()),
+        )
     }
-    #[inline(always)]
-    pub fn grow_y(&self) -> bool {
-        self.grow_y.is_some()
+    #[inline]
+    pub fn chain_x(&self, pref: PreferredSize) -> PreferredSize{
+        PreferredSize::growing(
+            Vector::new(
+                self.preferred.x + pref.preferred.x,
+                self.preferred.y.max(pref.preferred.y),
+            ),
+            self.grow_x
+                .or(pref.grow_x)
+                .map(|_|self.min_x() + pref.min_x()),
+            self.grow_y
+                .or(pref.grow_y)
+                .map(|_|self.min_y().max( pref.min_y())),
+        )
     }
-    pub fn paralel_x(&mut self, pref: PreferredSize) {
-        self.preferred.x = self.preferred.x.max(pref.preferred.x);
-        self.grow_x = if self.grow_x() || pref.grow_x() {
-            Some(self.min_x().max( pref.min_x()))
-        } else {
-            None
-        };
+    #[inline]
+    pub fn wrap(&self, wrap_size: Vector) -> PreferredSize{
+        PreferredSize::growing(
+            self.preferred + wrap_size,
+            self.grow_x.map(|value| value + wrap_size.x),
+            self.grow_y.map(|value| value + wrap_size.y),
+        )
     }
-    pub fn chain_x(&mut self, pref: PreferredSize) {
-        self.preferred.x += pref.preferred.x;
-        self.grow_x = if self.grow_x() || pref.grow_x() {
-            Some(self.min_x() + pref.min_x())
-        } else {
-            None
-        };
+
+    #[inline]
+    pub fn pref(&self) -> Vector {
+        self.preferred
     }
-    pub fn paralel_y(&mut self, pref: PreferredSize) {
-        self.preferred.y = self.preferred.y.max(pref.preferred.y);
-        self.grow_y = if self.grow_y() || pref.grow_y() {
-            Some(self.min_y().max( pref.min_y()))
-        } else {
-            None
-        };
-    }
-    pub fn chain_y(&mut self, pref: PreferredSize) {
-        self.preferred.y += pref.preferred.y;
-        self.grow_y = if self.grow_y() || pref.grow_y() {
-            Some(self.min_y() + pref.min_y())
-        } else {
-            None
-        };
+    #[inline]
+    pub fn min(&self) -> Vector {
+        Vector::new(self.min_x(), self.min_y())
     }
 }
 
@@ -76,7 +91,7 @@ impl PreferredSize {
 ///
 pub trait Layout{
     /// This method is called when this components size or a child-component preferred size changed
-    fn layout(&mut self, childs: ChildsMut<NewComponent>) -> bool;
+    fn layout(&mut self, childs: ChildsMut<NewComponent>, size: Vector) -> bool;
 
     ///calculates the preferred size for this component according to the children
     fn preferred_size(&self, childs: ChildsMut<NewComponent>) -> PreferredSize;
@@ -87,12 +102,10 @@ pub enum Alignment {
     Start,
     Center,
     End,
-    Fill,
 }
 
 pub struct HBox {
     v_align: Alignment,
-    size: Vector,
     preferred_size: PreferredSize,
 }
 
@@ -100,25 +113,35 @@ impl HBox {
     pub fn new(v_align: Alignment) -> Self {
         HBox{
             v_align,
-            size: Vector::new(0.0, 0.0),
-            preferred_size: PreferredSize::new(0.0, 0.0, None, None)
+            preferred_size: PreferredSize::empty()
         }
     }
 }
 
 impl Layout for HBox {
-    fn layout(&mut self, mut childs: ChildsMut<NewComponent>) -> bool{
+    fn layout(&mut self, mut childs: ChildsMut<NewComponent>, size: Vector) -> bool {
+        let mut start_x = 0f32;
+        let pref_size = self.preferred_size(childs.id());
+
+        //let size = 1_f32.min(0_f32.max((size.x - pref_size.min_x()) / (pref_size.pref().x - pref_size.min_x())));
+
+        for mut child in childs.childs_mut() {
+            let child_size = child.this().preferred_size().pref();
+            println!("Child Size: {:?}", child_size);
+            child.pos = Vector::new(start_x, 0.0);
+            child.set_size(child_size);
+            start_x += child_size.x;
+        }
         false
     }
 
     fn preferred_size(&self, mut childs: ChildsMut<NewComponent>) -> PreferredSize {
-        let mut pref = PreferredSize::empty();
+        let mut pref_size = PreferredSize::empty();
 
-        for child in childs.childs_mut() {
-            pref.paralel_y(child.preferred_size());
-            pref.chain_x(child.preferred_size());
+        for element in childs.childs_mut() {
+            pref_size = pref_size.chain_x(element.preferred_size());
         }
-        pref
+
+        pref_size
     }
 }
-

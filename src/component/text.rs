@@ -27,7 +27,7 @@ impl Text {
     }
 
     #[inline(always)]
-    pub fn build(&self, builder: &mut Builder) {
+    pub fn build(&self, mut builder: Builder) {
         draw_string(builder, &self.text, self.color, Vector::null(), self.size);
     }
 }
@@ -51,10 +51,10 @@ impl TextField {
     }
 
     pub fn get_pref_size(&self) -> Vector {
-        self.current.get_pref_size().xy(6.0, 6.0)
+        self.current.get_pref_size()
     }
 
-    pub fn build(&self, builder: &mut Builder) {
+    pub fn build(&self, mut builder: Builder) {
         builder.rect(Vector::new(self.cursor as f32 * self.current.width() as f32, 0.0),
                      Vector::new(self.cursor as f32 * self.current.width() as f32 + 1.0, self.current.size),
                      self.current.color);
@@ -127,7 +127,7 @@ impl TextField {
 }
 
 #[inline(always)]
-fn draw_string(builder: &mut Builder, text: &str, color: Color, pos: Vector, size: f32){
+fn draw_string(mut builder: Builder, text: &str, color: Color, pos: Vector, size: f32){
     let width = (size * 36.0 / 70.0).floor();
 
     let mut x = 0.0f32;

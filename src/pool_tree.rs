@@ -90,7 +90,9 @@ impl<T> PoolTree<T> {
             (index, buf)
         } else {
             //all values are used => allocate a new one
-            self.buffer.push(Item::new(value, parent));
+            let mut value = Item::new(value, parent);
+            value.used = true;
+            self.buffer.push(value);
             let index = self.buffer.len() - 1;
             (index, self.buffer.get_unchecked_mut(index))
         }
@@ -160,14 +162,20 @@ pub struct NodeTop<'a, T> {
 }
 
 impl<'a, T> NodeTop<'a, T> {
-    pub fn to_parent(self) -> Option<NodeTop<'a, T>> {
+    pub fn to_parent(self) -> Result<NodeTop<'a, T>, NodeTop<'a, T>> {
         self.inner.current.parent
             .map(|index|unsafe { (&mut *self.inner.rest).get_unchecked_mut(index) })
+            .ok_or(self)
 
     }
-    pub fn to_child(self, index: usize) -> Option<NodeTop<'a, T>> {
+    pub fn to_child(self, index: usize) -> Result<NodeTop<'a, T>, NodeTop<'a, T>> {
         self.current.childs.get(index)
             .map(|index|unsafe { (&mut *self.inner.rest).get_unchecked_mut(*index) })
+            .ok_or(self)
+    }
+    pub fn to_id(mut self, id: usize) -> Result<NodeTop<'a, T>, NodeTop<'a, T>> {
+        unsafe{&mut *self.rest}.get_mut(id)
+            .ok_or(self)
     }
     pub fn add_child(&mut self, value: T) -> NodeMut<'a, T> {
         //After this self.current is invalid
@@ -180,8 +188,10 @@ impl<'a, T> NodeTop<'a, T> {
             rest: self.rest,
         }
     }
-    pub fn as_mut(self) -> NodeMut<'a, T> {
-        self.inner
+    pub fn as_mut(&mut self) -> NodeMut<T> {
+        unsafe{
+            std::ptr::read(&self.inner)
+        }
     }
     pub fn swap_children(&mut self, index1: usize, index2: usize) -> bool {
         unimplemented!()
@@ -210,6 +220,10 @@ pub struct NodeMut<'a, T> {
 }
 
 impl<'a, T> NodeMut<'a, T> {
+
+    pub fn index(&self) -> usize {
+        self.index
+    }
     #[inline(always)]
     pub fn child_mut(&mut self, index: usize) -> Option<NodeMut<T>> {
         self.current.childs.get(index)
@@ -237,8 +251,11 @@ impl<'a, T> NodeMut<'a, T> {
             buffer: unsafe{ &*self.rest },
         }
     }
+    pub fn child_ids(&self) -> Iter<usize> {
+        self.current.childs.iter()
+    }
     #[inline(always)]
-    fn split(&mut self) -> (&mut T, ChildsMut<T>) {
+    pub fn split(&mut self) -> (&mut T, ChildsMut<T>) {
         (&mut self.current.value, ChildsMut{indices: &mut self.current.childs, buffer: self.rest})
     }
 }
@@ -291,7 +308,12 @@ pub struct ChildsMut<'a, T> {
 }
 
 impl<'a, T> ChildsMut<'a, T> {
-
+    pub fn id(&mut self) -> Self {
+        ChildsMut{
+            indices: self.indices,
+            buffer: self.buffer,
+        }
+    }
     #[inline(always)]
     pub fn childs_mut(&mut self) -> ChildIterMut<T> {
         ChildIterMut{
@@ -318,6 +340,10 @@ impl<'a, T> Node<'a, T> {
         self.current.childs.get(index)
             .map(|index|unsafe{self.rest.get_unchecked(*index) })
 
+    }
+
+    pub fn index(&self) -> usize {
+        self.index
     }
 
     pub fn parent(&self) -> Option<Node<T>> {

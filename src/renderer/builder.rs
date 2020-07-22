@@ -119,8 +119,10 @@ impl<'a> Builder<'a>{
 
     //Builder Options
 
-    pub fn translate(&mut self, relative_position: Vector){
-        self.position += relative_position;
+    pub fn translate(&mut self, relative_position: Vector) -> Builder {
+        let mut builder = self.id();
+        builder.position += relative_position;
+        builder
     }
     pub fn id<'b>(&'b mut self) -> Builder<'b> {
         Builder{

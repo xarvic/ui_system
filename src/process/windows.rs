@@ -4,7 +4,7 @@ use glium::{Display, Surface};
 use glutin::event::WindowEvent;
 use glutin::window::WindowId;
 
-use crate::component::{NewComponent, Content, Text, TextField};
+use crate::component::{NewComponent, Content, Text, TextField, HBox, Alignment};
 use crate::renderer::Renderer;
 use crate::core::{Vector, Color};
 use crate::state::{StorageID, state};
@@ -51,14 +51,27 @@ fn test_node(mut node: NodeTop<NewComponent>) {
 
     collection.hovered = sheet.backgorund_color(1.0, 0.2, 0.0).clone();
     collection.clicked = sheet.backgorund_color(1.0, 0.0, 0.1)
-        .simple_border(5.0, 5.0, Color::new(1.0, 0.2, 0.2, 1.0)).clone();
+        .simple_border(5.0, 7.0, Color::new(1.0, 0.2, 0.2, 1.0)).clone();
 
     let collection = Rc::new(collection);
-
-    node.style = Some(Style::new(collection));
-    node.size = Vector::new(150.0, 50.0);
     let state = state("Test".to_owned());
-    node.content = Content::TextField(TextField::new(state.clone()));
+
+    node.content = Content::Container(Box::new(HBox::new(Alignment::Center)));
+
+    {
+        let mut node = node.add_child(NewComponent::empty());
+        node.style = Some(Style::new(collection.clone()));
+        node.size = Vector::new(150.0, 50.0);
+        node.content = Content::TextField(TextField::new(state.clone()));
+    }
+    {
+        let mut node = node.add_child(NewComponent::empty());
+        node.style = Some(Style::new(collection));
+        node.size = Vector::new(150.0, 50.0);
+        node.content = Content::TextField(TextField::new(state.clone()));
+    }
+
+    node.as_mut().layout();
 }
 
 pub struct ManagedWindow {
@@ -112,26 +125,26 @@ impl ManagedWindow {
             WindowEvent::CursorMoved { position, .. } => {
                 self.last_mouse_position = Vector::new(position.x as f32, position.y as f32);
 
-                self.components.root_mut().as_mut().handle_event(Event::Mouse(self.last_mouse_position, MouseEvent::Moved));
+                self.components.root_mut().handle_event(Event::Mouse(self.last_mouse_position, MouseEvent::Moved));
             }
             WindowEvent::CursorEntered { .. } => {
-                self.components.root_mut().as_mut().handle_event(Event::Mouse(self.last_mouse_position, MouseEvent::Enter));
+                self.components.root_mut().handle_event(Event::Mouse(self.last_mouse_position, MouseEvent::Enter));
             }
             WindowEvent::CursorLeft { .. } => {
-                self.components.root_mut().as_mut().handle_event(Event::Mouse(self.last_mouse_position, MouseEvent::Exit));
+                self.components.root_mut().handle_event(Event::Mouse(self.last_mouse_position, MouseEvent::Exit));
             }
             WindowEvent::MouseInput { state, button, .. } => {
                 if let glutin::event::ElementState::Pressed = state {
-                    self.components.root_mut().as_mut().handle_event(Event::Mouse(self.last_mouse_position, MouseEvent::Pressed(button)));
+                    self.components.root_mut().handle_event(Event::Mouse(self.last_mouse_position, MouseEvent::Pressed(button)));
                 } else {
-                    self.components.root_mut().as_mut().handle_event(Event::Mouse(self.last_mouse_position, MouseEvent::Relased(button)));
+                    self.components.root_mut().handle_event(Event::Mouse(self.last_mouse_position, MouseEvent::Relased(button)));
                 }
             }
             WindowEvent::ReceivedCharacter(charac) => {
-                self.components.root_mut().as_mut().handle_event(Event::Char(charac));
+                self.components.root_mut().handle_event(Event::Char(charac));
             }
             WindowEvent::KeyboardInput { device_id: _, input, is_synthetic: _ } => {
-                self.components.root_mut().as_mut().handle_event(Event::KeyBoard(input));
+                self.components.root_mut().handle_event(Event::KeyBoard(input));
             }
 
             _ => {}

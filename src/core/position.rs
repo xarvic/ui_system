@@ -22,6 +22,11 @@ impl Vector {
     pub fn xy(self, x: f32, y: f32) -> Vector {
         Vector{x: self.x + x, y: self.y + y}
     }
+
+    pub fn in_rect(&self, pos: Vector, size: Vector) -> bool {
+        self.x >= pos.x && self.y >= pos.y &&
+            self.x <= pos.x + size.x && self.y <= pos.y + size.y
+    }
 }
 
 impl Into<[f32; 2]> for Vector {

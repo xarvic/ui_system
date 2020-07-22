@@ -61,6 +61,7 @@ impl StyleSheet {
 
     pub fn simple_border(&mut self, width: f32, radius: f32, color: Color) -> &mut Self {
         let part = BorderPart{width, color};
+        self.border_radius(radius);
 
         self.parts = Some([
                 part.clone(),
@@ -169,7 +170,7 @@ impl Style {
         return false;
     }
 
-    pub fn shift(&self) -> Vector {
+    pub fn size(&self) -> Vector {
         if let Some(ref border) = self.current_sheet().parts {
             Vector::new(border[1].width + border[3].width, border[0].width + border[2].width)
         } else {
@@ -177,7 +178,7 @@ impl Style {
         }
     }
 
-    pub fn size(&self) -> Vector {
+    pub fn shift(&self) -> Vector {
         if let Some(ref border) = self.current_sheet().parts {
             Vector::new(border[3].width, border[0].width)
         } else {
